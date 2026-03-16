@@ -8,10 +8,30 @@ import { DetalhesChamado } from './pages/DetalhesChamado';
 import { Relatorios } from './pages/Relatorios';
 import { Perfil } from './pages/Perfil';
 import { Layout } from './Layout';
-
+import { Toaster } from 'react-hot-toast'; 
+import { AuthProvider } from './contexts/AuthContext';
 function App() {
   return (
     <BrowserRouter>
+      <AuthProvider>
+      <Toaster 
+        position="top-right" 
+        toastOptions={{
+          duration: 3000,
+          style: {
+            background: '#334155', // Fundo escuro elegante
+            color: '#fff',         // Texto branco
+            borderRadius: '10px',
+            fontWeight: '500',
+          },
+          success: {
+            style: { background: '#10b981' }, // Verde para sucesso
+          },
+          error: {
+            style: { background: '#ef4444' }, // Vermelho para erro
+          },
+        }} 
+      />
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/login" element={<Login />} />
@@ -29,6 +49,7 @@ function App() {
         </Route>
         
       </Routes>
+      </AuthProvider>
     </BrowserRouter>
   );
 }

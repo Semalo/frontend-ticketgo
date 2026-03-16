@@ -1,180 +1,198 @@
-import { useState } from 'react';
-import { Search, Filter, Eye, Inbox, Send, CheckCircle2 } from 'lucide-react';
-import { Link } from 'react-router-dom';
-// Mock de dados (Simulando o retorno da API do Sankhya)
-const mockChamados = [
-  { id: 'CHM-1045', assunto: 'Dúvida sobre lançamento contábil', setorOrigem: 'Vendas', setorDestino: 'Contabilidade', solicitante: 'Maria Souza', data: '15/03/2026', status: 'Aberto', prioridade: 'Alta' },
-  { id: 'CHM-1046', assunto: 'Ajuste de centro de custo', setorOrigem: 'RH', setorDestino: 'Contabilidade', solicitante: 'Carlos Lima', data: '14/03/2026', status: 'Em Andamento', prioridade: 'Média' },
-  { id: 'CHM-1042', assunto: 'Impressora sem toner', setorOrigem: 'Contabilidade', setorDestino: 'TI', solicitante: 'Raul Silva', data: '15/03/2026', status: 'Aberto', prioridade: 'Baixa' },
-  { id: 'CHM-1030', assunto: 'Ar condicionado pingando', setorOrigem: 'Contabilidade', setorDestino: 'Manutenção', solicitante: 'Raul Silva', data: '12/03/2026', status: 'Em Andamento', prioridade: 'Média' },
-  { id: 'CHM-1010', assunto: 'Acesso bloqueado no Sankhya', setorOrigem: 'Contabilidade', setorDestino: 'TI', solicitante: 'Raul Silva', data: '10/03/2026', status: 'Concluído', prioridade: 'Alta' },
-  { id: 'CHM-1005', assunto: 'Relatório de despesas', setorOrigem: 'Diretoria', setorDestino: 'Contabilidade', solicitante: 'Ana Paula', data: '05/03/2026', status: 'Concluído', prioridade: 'Média' },
-];
+import { useState, useEffect } from 'react';
+import { Ticket, Clock, AlertCircle, Search, MoreHorizontal } from 'lucide-react';
+import api from '../services/api';
+import { useNavigate } from 'react-router-dom';
+// Interface do TypeScript baseada no que o Node.js devolve
+interface Chamado {
+  idChamado: number;
+  contato: string;
+  dataAbertura: string;
+  prioridade: string;
+  problema: string;
+  nomeAssunto: string;
+  nomeStatus: string;
+  idStatus: string;
+}
 
 export function MeusChamados() {
-  const [activeTab, setActiveTab] = useState<'entrada' | 'saida' | 'historico'>('entrada');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [chamados, setChamados] = useState<Chamado[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busca, setBusca] = useState('');
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const itensPorPagina = 10; // quantidade por página
+  const navigate = useNavigate();
+  // Busca os chamados assim que a tela abre
+  useEffect(() => {
+    const buscarChamados = async () => {
+      try {
+        const response = await api.get('/api/sankhya/chamados');
+        if (response.data.sucesso) {
+          setChamados(response.data.dados);
+        }
+      } catch (error) {
+        console.error('Erro ao buscar chamados:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Simulando o setor do usuário logado
-  const setorUsuario = 'Contabilidade';
-
-  // Lógica de filtragem baseada na aba ativa e no setor do usuário
-  const chamadosFiltrados = mockChamados.filter((chamado) => {
-    const matchesSearch = chamado.assunto.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                          chamado.id.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    if (!matchesSearch) return false;
-
-    if (activeTab === 'entrada') {
-      // Caixa de Entrada: Chamados destinados ao meu setor que não estão concluídos
-      return chamado.setorDestino === setorUsuario && chamado.status !== 'Concluído';
-    } 
-    if (activeTab === 'saida') {
-      // Minhas Solicitações: Chamados que meu setor abriu que não estão concluídos
-      return chamado.setorOrigem === setorUsuario && chamado.status !== 'Concluído';
-    }
-    // Histórico: Todos os chamados do meu setor que já foram concluídos
-    return (chamado.setorOrigem === setorUsuario || chamado.setorDestino === setorUsuario) && chamado.status === 'Concluído';
-  });
-
-  // Funções para estilizar os Badges (Etiquetas)
-  const getPrioridadeColor = (prioridade: string) => {
-    switch (prioridade) {
-      case 'Alta': return 'bg-red-100 text-red-700 border-red-200';
-      case 'Média': return 'bg-amber-100 text-amber-700 border-amber-200';
-      case 'Baixa': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
-    }
-  };
-
-  const getStatusColor = (status: string) => {
+    buscarChamados();
+  }, []);
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [busca]);
+  // Filtra os chamados pela barra de pesquisa (busca por ID ou Assunto)
+  const chamadosFiltrados = chamados.filter(chamado =>
+    chamado.idChamado.toString().includes(busca) ||
+    chamado.nomeAssunto.toLowerCase().includes(busca.toLowerCase()) ||
+    chamado.contato.toLowerCase().includes(busca.toLowerCase())
+  );
+  const indexUltimo = paginaAtual * itensPorPagina;
+  const indexPrimeiro = indexUltimo - itensPorPagina;
+  const chamadosPagina = chamadosFiltrados.slice(indexPrimeiro, indexUltimo);
+  const totalPaginas = Math.ceil(chamadosFiltrados.length / itensPorPagina);
+  // Função para renderizar a cor do status
+  const renderStatusBadge = (status: string, nome: string) => {
     switch (status) {
-      case 'Aberto': return 'bg-blue-100 text-blue-700';
-      case 'Em Andamento': return 'bg-purple-100 text-purple-700';
-      case 'Concluído': return 'bg-gray-100 text-gray-600';
-      default: return 'bg-gray-100 text-gray-700';
+      case '0': return <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full">{nome}</span>;
+      case '1': return <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">{nome}</span>;
+      case '2': return <span className="px-2 py-1 bg-purple-100 text-purple-800 text-xs font-medium rounded-full">{nome}</span>;
+      case '3': return <span className="px-2 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full">{nome}</span>;
+      default: return <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full">{nome}</span>;
     }
   };
 
   return (
-    <div className="max-w-10xl mx-auto">
+    <div className="max-w-7xl mx-auto space-y-6">
+
       {/* Cabeçalho */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Meus Chamados</h1>
-          <p className="text-gray-500 mt-1">Gerencie as demandas do setor de {setorUsuario}</p>
+          <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Ticket className="text-blue-600" /> Fila de Chamados
+          </h1>
+          <p className="text-gray-500 mt-1 text-sm">Acompanhe as solicitações em andamento (TI).</p>
         </div>
 
         {/* Barra de Pesquisa */}
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="text"
-              placeholder="Buscar por ID ou assunto..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 w-full md:w-64 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm"
-            />
-          </div>
-          <button className="p-2 border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
-            <Filter size={18} />
-          </button>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+          <input
+            type="text"
+            placeholder="Buscar por ID, Nome ou Assunto..."
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            className="pl-10 pr-4 py-2 border border-gray-200 rounded-lg w-full sm:w-80 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
       </div>
 
+      {/* Tabela de Chamados */}
       <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-        
-        {/* Navegação por Abas (Tabs) */}
-        <div className="flex overflow-x-auto border-b border-gray-200 bg-gray-50/50">
-          <button
-            onClick={() => setActiveTab('entrada')}
-            className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'entrada' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <Inbox size={18} /> Caixa de Entrada
-          </button>
-          <button
-            onClick={() => setActiveTab('saida')}
-            className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'saida' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <Send size={18} /> Minhas Solicitações
-          </button>
-          <button
-            onClick={() => setActiveTab('historico')}
-            className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors border-b-2 whitespace-nowrap ${
-              activeTab === 'historico' ? 'border-blue-600 text-blue-600 bg-white' : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-            }`}
-          >
-            <CheckCircle2 size={18} /> Histórico (Concluídos)
-          </button>
-        </div>
-
-        {/* Tabela de Dados Responsiva */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-sm text-gray-600">
-            <thead className="bg-gray-50 text-gray-700 text-xs uppercase font-semibold border-b border-gray-200">
-              <tr>
-                <th className="px-6 py-4 whitespace-nowrap">ID Chamado</th>
-                <th className="px-6 py-4">Assunto</th>
-                <th className="px-6 py-4 whitespace-nowrap">
-                  {activeTab === 'saida' ? 'Setor Destino' : 'Setor Origem'}
-                </th>
-                <th className="px-6 py-4 whitespace-nowrap">Data</th>
-                <th className="px-6 py-4 whitespace-nowrap">Prioridade</th>
-                <th className="px-6 py-4 whitespace-nowrap">Status</th>
-                <th className="px-6 py-4 text-center whitespace-nowrap">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {chamadosFiltrados.length > 0 ? (
-                chamadosFiltrados.map((chamado) => (
-                  <tr key={chamado.id} className="hover:bg-blue-50/50 transition-colors">
-                    <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
-                      {chamado.id}
-                    </td>
-                    <td className="px-6 py-4 font-medium text-gray-800">
-                      {chamado.assunto}
-                      <div className="text-xs text-gray-400 font-normal mt-0.5">Sol: {chamado.solicitante}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-gray-600">
-                      {activeTab === 'saida' ? chamado.setorDestino : chamado.setorOrigem}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {chamado.data}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium border ${getPrioridadeColor(chamado.prioridade)}`}>
-                        {chamado.prioridade}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatusColor(chamado.status)}`}>
-                        {chamado.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center whitespace-nowrap">
-                      <Link to={`/chamado/${chamado.id}`} className="text-gray-400 hover:text-blue-600 transition-colors">
-                      <Eye size={18} />
-                    </Link>
-                    </td>
-                  </tr>
-                ))
-              ) : (
+        {loading ? (
+          <div className="p-10 text-center text-gray-500 flex flex-col items-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-4"></div>
+            Carregando chamados...
+          </div>
+        ) : chamadosFiltrados.length === 0 ? (
+          <div className="p-10 text-center text-gray-500">
+            Nenhum chamado encontrado.
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm whitespace-nowrap">
+              <thead className="bg-gray-50 border-b border-gray-100 text-gray-600">
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                    Nenhum chamado encontrado nesta categoria.
-                  </td>
+                  <th className="px-6 py-4 font-semibold">ID</th>
+                  <th className="px-6 py-4 font-semibold">Solicitante</th>
+                  <th className="px-6 py-4 font-semibold">Assunto</th>
+                  <th className="px-6 py-4 font-semibold">Status</th>
+                  <th className="px-6 py-4 font-semibold">Prioridade</th>
+                  <th className="px-6 py-4 font-semibold">Abertura</th>
+                  <th className="px-6 py-4 font-semibold text-center">Ações</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {chamadosPagina.map((chamado) => (
+                  <tr
+                    key={chamado.idChamado}
+                    onClick={() => navigate(`/chamado/${chamado.idChamado}`)}
+                    className="hover:bg-gray-50 transition-colors cursor-pointer"
+                  >
 
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      #{chamado.idChamado}
+                    </td>
+
+                    <td className="px-6 py-4 text-gray-700">
+                      {chamado.contato}
+                    </td>
+
+                    <td className="px-6 py-4 text-gray-700 max-w-xs truncate" title={chamado.problema}>
+                      <span className="font-medium text-gray-900 block">{chamado.nomeAssunto}</span>
+                      <span className="text-xs text-gray-500 truncate">{chamado.problema}</span>
+                    </td>
+
+                    <td className="px-6 py-4">
+                      {renderStatusBadge(chamado.idStatus, chamado.nomeStatus)}
+                    </td>
+
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5 text-gray-700">
+                        {chamado.prioridade?.toUpperCase() === 'ALTA' && <AlertCircle size={16} className="text-red-500" />}
+                        {chamado.prioridade}
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 text-gray-500">
+                      <div className="flex items-center gap-1.5">
+                        <Clock size={14} />
+                        {chamado.dataAbertura}
+                      </div>
+                    </td>
+
+                    <td className="px-6 py-4 text-center">
+                      <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                        <MoreHorizontal size={18} />
+                      </button>
+                    </td>
+
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-100 text-sm">
+              <span className="text-gray-500">
+                Página {totalPaginas === 0 ? 0 : paginaAtual} de {totalPaginas || 0}
+              </span>
+
+              <div className="flex gap-2">
+                <button
+                  disabled={paginaAtual === 1}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPaginaAtual((p) => p - 1);
+                  }}
+                  className="px-3 py-1 border rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Anterior
+                </button>
+                <button
+                  disabled={paginaAtual === totalPaginas || totalPaginas === 0}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPaginaAtual((p) => p + 1);
+                  }}
+                  className="px-3 py-1 border rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Próxima
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
+
     </div>
   );
 }

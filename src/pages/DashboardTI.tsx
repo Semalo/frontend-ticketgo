@@ -1,12 +1,11 @@
-import {
-  AlertCircle,
-  CheckCircle2,
-  Clock,
-  Ticket,
+import { 
+  AlertCircle, 
+  CheckCircle2, 
+  Clock, 
+  Ticket, 
   TrendingUp,
   MoreVertical,
-  Eye,
-  Link
+  Eye
 } from 'lucide-react';
 
 // Mock de dados globais (Visão de Super Usuário/TI)
@@ -29,7 +28,7 @@ const chamadosPorSetor = [
 export function DashboardTI() {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
-
+      
       {/* Cabeçalho do Dashboard */}
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Painel de Controle - TI</h1>
@@ -85,17 +84,17 @@ export function DashboardTI() {
 
       {/* Área de Conteúdo Principal (Gráficos e Tabelas) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
+        
         {/* Coluna Esquerda: Tabela de Chamados Recentes (Ocupa 2 colunas no desktop) */}
         <div className="lg:col-span-2 bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
           <div className="p-5 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
             <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-              <TrendingUp size={20} className="text-blue-600" />
+              <TrendingUp size={20} className="text-blue-600" /> 
               Fila Recente
             </h2>
             <button className="text-sm text-blue-600 font-medium hover:underline">Ver todos</button>
           </div>
-
+          
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm text-gray-600">
               <thead className="bg-white border-b border-gray-100 text-gray-500 font-medium">
@@ -116,18 +115,19 @@ export function DashboardTI() {
                     </td>
                     <td className="px-5 py-4 font-medium">{chamado.setorOrigem}</td>
                     <td className="px-5 py-4">
-                      <span className={`px-2 py-1 rounded text-xs font-semibold ${chamado.prioridade === 'Alta' ? 'bg-red-100 text-red-700' :
-                          chamado.status === 'Concluído' ? 'bg-gray-100 text-gray-600' :
-                            'bg-blue-100 text-blue-700'
-                        }`}>
+                      <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                        chamado.prioridade === 'Alta' ? 'bg-red-100 text-red-700' :
+                        chamado.status === 'Concluído' ? 'bg-gray-100 text-gray-600' :
+                        'bg-blue-100 text-blue-700'
+                      }`}>
                         {chamado.prioridade === 'Alta' ? 'Urgente' : chamado.status}
                       </span>
                     </td>
                     <td className="px-5 py-4 text-xs text-gray-400">{chamado.tempo}</td>
                     <td className="px-5 py-4 text-center">
-                      <Link to={`/chamado/${chamado.id}`} className="text-gray-400 hover:text-blue-600 transition-colors">
+                      <button className="text-gray-400 hover:text-blue-600 transition-colors">
                         <Eye size={18} />
-                      </Link>
+                      </button>
                     </td>
                   </tr>
                 ))}
@@ -140,9 +140,9 @@ export function DashboardTI() {
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
           <div className="p-5 border-b border-gray-200 bg-gray-50/50 flex justify-between items-center">
             <h2 className="text-lg font-bold text-gray-800">Volume por Setor</h2>
-            <button className="text-gray-400 hover:text-gray-600"><MoreVertical size={18} /></button>
+            <button className="text-gray-400 hover:text-gray-600"><MoreVertical size={18}/></button>
           </div>
-
+          
           <div className="p-5 flex-1 flex flex-col justify-center space-y-6">
             {chamadosPorSetor.map((item) => (
               <div key={item.setor}>
@@ -156,7 +156,7 @@ export function DashboardTI() {
               </div>
             ))}
           </div>
-
+          
           <div className="p-4 border-t border-gray-100 bg-gray-50 text-center">
             <p className="text-xs text-gray-500">Métrica baseada nos últimos 30 dias</p>
           </div>

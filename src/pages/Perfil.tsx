@@ -1,15 +1,10 @@
 import { User, Mail, Building, Briefcase, Key, Shield } from 'lucide-react';
+// 1. Importamos o nosso Hook para acessar os dados globais
+import { useAuth } from '../contexts/AuthContext';
 
 export function Perfil() {
-  // Simulando os dados do colaborador logado
-  const colaborador = {
-    nome: 'Raul Silva',
-    email: 'raul.silva@empresa.com.br',
-    setor: 'Contabilidade',
-    cargo: 'Analista Contábil Sênior',
-    matricula: '10445',
-    dataAdmissao: '12/04/2021',
-  };
+  // 2. Extraímos os dados reais do usuário logado
+  const { user } = useAuth();
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -24,12 +19,15 @@ export function Perfil() {
         
         {/* Card Principal: Foto e Resumo */}
         <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 flex flex-col items-center text-center">
-          <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-4 border-4 border-white shadow-md">
-            <User size={40} />
+          
+          {/* Avatar dinâmico com a primeira letra do nome ou o ícone */}
+          <div className="w-24 h-24 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mb-4 border-4 border-white shadow-md text-3xl font-bold">
+            {user?.nomeUsuario ? user.nomeUsuario.charAt(0).toUpperCase() : <User size={40} />}
           </div>
-          <h2 className="text-xl font-bold text-gray-900">{colaborador.nome}</h2>
-          <p className="text-sm font-medium text-blue-600 mb-1">{colaborador.cargo}</p>
-          <p className="text-xs text-gray-500">{colaborador.setor}</p>
+          
+          <h2 className="text-xl font-bold text-gray-900">{user?.nomeUsuario || 'Carregando...'}</h2>
+          <p className="text-sm font-medium text-blue-600 mb-1">Cód. Usuário: {user?.codigoUsuario}</p>
+          <p className="text-xs text-gray-500">{user?.setorNome || 'Setor não identificado'}</p>
           
           <div className="w-full mt-6 pt-6 border-t border-gray-100 space-y-3">
             <button className="w-full flex items-center justify-center gap-2 bg-gray-50 text-gray-700 py-2 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors border border-gray-200">
@@ -54,38 +52,40 @@ export function Perfil() {
                 <dt className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1 mb-1">
                   <User size={14} /> Nome Completo
                 </dt>
-                <dd className="text-sm font-medium text-gray-900">{colaborador.nome}</dd>
+                <dd className="text-sm font-medium text-gray-900">{user?.nomeParceiro || '-'}</dd>
               </div>
 
               <div>
                 <dt className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1 mb-1">
                   <Mail size={14} /> E-mail Corporativo
                 </dt>
-                <dd className="text-sm font-medium text-gray-900">{colaborador.email}</dd>
+                <dd className="text-sm font-medium text-gray-900">{user?.email || 'Não cadastrado'}</dd>
               </div>
 
               <div>
                 <dt className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1 mb-1">
                   <Building size={14} /> Setor (Centro de Custo)
                 </dt>
-                <dd className="text-sm font-medium text-gray-900">{colaborador.setor}</dd>
+                <dd className="text-sm font-medium text-gray-900">{user?.setorNome || '-'}</dd>
               </div>
 
               <div>
                 <dt className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1 mb-1">
-                  <Briefcase size={14} /> Cargo / Função
+                  <Briefcase size={14} /> Código do Parceiro
                 </dt>
-                <dd className="text-sm font-medium text-gray-900">{colaborador.cargo}</dd>
+                {/* Substituímos o cargo pelo Cód. Parceiro, pois foi o que trouxemos na query */}
+                <dd className="text-sm font-medium text-gray-900">{user?.codigoParceiro || 'Não informado'}</dd>
               </div>
 
               <div>
-                <dt className="text-xs font-bold text-gray-500 uppercase mb-1">Matrícula ERP</dt>
-                <dd className="text-sm font-medium text-gray-900">{colaborador.matricula}</dd>
+                <dt className="text-xs font-bold text-gray-500 uppercase mb-1">Matrícula ERP (Cód. Usuário)</dt>
+                <dd className="text-sm font-medium text-gray-900">{user?.codigoUsuario || '-'}</dd>
               </div>
 
               <div>
-                <dt className="text-xs font-bold text-gray-500 uppercase mb-1">Data de Admissão</dt>
-                <dd className="text-sm font-medium text-gray-900">{colaborador.dataAdmissao}</dd>
+                <dt className="text-xs font-bold text-gray-500 uppercase mb-1">Código do Grupo</dt>
+                {/* Substituímos data de admissão pelo Cód. Grupo */}
+                <dd className="text-sm font-medium text-gray-900">{user?.codigoGrupo || '-'}</dd>
               </div>
 
             </dl>
