@@ -3,7 +3,7 @@ import { Save, X, Clock, User, Building, Info } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { SETORES_MAP, ASSUNTOS_MAP } from '../utils/dicionarios';
-
+import toast from 'react-hot-toast';
 // 1. Importando o contexto para acessar o usuário logado
 import { useAuth } from '../contexts/AuthContext'; 
 
@@ -49,7 +49,7 @@ export function NovoChamado() {
     const codigoUsuario = user?.codigoUsuario; 
 
     if (!codigoUsuario) {
-      alert('Erro: Não foi possível identificar o seu código de usuário. Tente fazer login novamente.');
+      toast.error('Erro: Não foi possível identificar o seu código de usuário. Tente fazer login novamente.');
       return;
     }
 
@@ -67,14 +67,14 @@ export function NovoChamado() {
       const response = await api.post('/api/sankhya/chamados', payloadSankhya);
 
       if (response.data.sucesso) {
-        alert('Chamado aberto com sucesso!');
+        toast.success('Chamado aberto com sucesso!');
         navigate('/chamados'); 
       } else {
-        alert('Erro ao criar chamado: ' + response.data.erro);
+        toast.error('Erro ao criar chamado: ' + response.data.erro);
       }
     } catch (error) {
       console.error('Erro ao salvar no Sankhya:', error);
-      alert('Erro ao comunicar com o servidor. Tente novamente.');
+      toast.error('Erro ao comunicar com o servidor. Tente novamente.');
     } finally {
       setLoading(false);
     }

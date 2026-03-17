@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext'; 
-
+import toast from 'react-hot-toast';
 export function DetalhesChamado() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -56,16 +56,16 @@ export function DetalhesChamado() {
       });
 
       if (response.data.sucesso) {
-        alert('Anexo enviado com sucesso!');
+        toast.success('Anexo enviado com sucesso!');
         setArquivoSelecionado(null);
         setDescricaoAnexo('');
         await buscarDetalhes(); 
       } else {
-        alert('Erro: ' + response.data.erro);
+        toast.error('Erro: ' + response.data.erro);
       }
     } catch (error) {
       console.error('Erro ao enviar anexo:', error);
-      alert('Falha na conexão ao enviar o anexo.');
+      toast.error('Falha na conexão ao enviar o anexo.');
     } finally {
       setEnviandoAnexo(false);
     }
@@ -93,8 +93,8 @@ export function DetalhesChamado() {
   }, [id]);
 
   const handleSalvarAlteracoes = async () => {
-    if (!codigoUsuario) return alert('Erro: Usuário não identificado.');
-    if (!podeGerir) return alert('Você não tem permissão para alterar este chamado.');
+    if (!codigoUsuario) return toast.error('Erro: Usuário não identificado.');
+    if (!podeGerir) return toast.error('Você não tem permissão para alterar este chamado.');
 
     setSalvando(true);
 
@@ -108,14 +108,14 @@ export function DetalhesChamado() {
       const response = await api.put(`/api/sankhya/chamados/${id}`, payload);
 
       if (response.data.sucesso) {
-        alert('Alterações guardadas com sucesso!');
+        toast.success('Alterações guardadas com sucesso!');
         await buscarDetalhes(); 
       } else {
-        alert('Erro ao guardar: ' + response.data.erro);
+        toast.error('Erro ao guardar: ' + response.data.erro);
       }
     } catch (error) {
       console.error('Erro ao salvar alterações:', error);
-      alert('Falha na conexão ao tentar atualizar o chamado.');
+      toast.error('Falha na conexão ao tentar atualizar o chamado.');
     } finally {
       setSalvando(false);
     }
@@ -139,11 +139,11 @@ export function DetalhesChamado() {
         setNovaMensagem(''); 
         await buscarDetalhes(); 
       } else {
-        alert('Erro ao enviar mensagem: ' + response.data.erro);
+        toast.error('Erro ao enviar mensagem: ' + response.data.erro);
       }
     } catch (error) {
       console.error('Erro ao enviar interação:', error);
-      alert('Falha na conexão.');
+      toast.error('Falha na conexão.');
     } finally {
       setEnviando(false);
     }
