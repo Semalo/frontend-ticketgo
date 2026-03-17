@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
@@ -8,62 +8,151 @@ import {
   Building,  
   Save,
   CheckCircle2,
-  Paperclip
+  Paperclip,
+  X
 } from 'lucide-react';
-import api from '../services/api'; // Importamos a nossa conexão com o backend
-
-
+import api from '../services/api';
 
 export function DetalhesChamado() {
-  
-  const { id } = useParams(); // Pega o ID na URL
+  const { id } = useParams();
   const navigate = useNavigate();
+
+  // ==========================================
+  // BUSCA O USUÁRIO LOGADO NO LOCALSTORAGE
+  // ==========================================
+  const usuarioStorage = localStorage.getItem('usuario_logado');
+  const usuario = usuarioStorage ? JSON.parse(usuarioStorage) : null;
+  // Pega o código do usuário logado. Se falhar, usa '1936' como garantia para não quebrar.
+  const CODIGO_ANALISTA_ATUAL = usuario?.codigoUsuario || '1936'; 
 
   // Estados dos dados que vêm da API
   const [chamado, setChamado] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [enviando, setEnviando] = useState(false);
 
   // Estados geríveis no ecrã (Selects e Inputs)
   const [status, setStatus] = useState('');
   const [prioridade, setPrioridade] = useState('');
   const [novaMensagem, setNovaMensagem] = useState('');
+  const [salvando, setSalvando] = useState(false);
 
-  // 1. Busca os dados reais no banco de dados assim que a tela abre
-  useEffect(() => {
-    const buscarDetalhes = async () => {
-      try {
-        const response = await api.get(`/api/sankhya/chamados/${id}`);
-        if (response.data.sucesso) {
-          const dados = response.data.dados;
-          setChamado(dados);
-          
-          // Sincroniza os selects com os dados reais do banco
-          setStatus(dados.idStatus); // Usamos o ID do status (0, 1, 2, 3)
-          setPrioridade(dados.prioridade);
-        }
-      } catch (error) {
-        console.error('Erro ao buscar detalhes do chamado:', error);
-      } finally {
-        setLoading(false);
+  // ==========================================
+  // ESTADOS PARA O ANEXO
+  // ==========================================
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [arquivoSelecionado, setArquivoSelecionado] = useState<File | null>(null);
+  const [descricaoAnexo, setDescricaoAnexo] = useState('');
+  const [enviandoAnexo, setEnviandoAnexo] = useState(false);
+
+  const handleEnviarAnexo = async () => {
+    if (!arquivoSelecionado) return;
+    setEnviandoAnexo(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('arquivo', arquivoSelecionado);
+      formData.append('descricao', descricaoAnexo || 'Anexo via Portal');
+
+      const response = await api.post(`/api/sankhya/chamados/${id}/anexo`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+
+      if (response.data.sucesso) {
+        alert('Anexo enviado com sucesso!');
+        setArquivoSelecionado(null);
+        setDescricaoAnexo('');
+        await buscarDetalhes(); // Recarrega para vermos a atualização
+      } else {
+        alert('Erro: ' + response.data.erro);
       }
-    };
+    } catch (error) {
+      console.error('Erro ao enviar anexo:', error);
+      alert('Falha na conexão ao enviar o anexo.');
+    } finally {
+      setEnviandoAnexo(false);
+    }
+  };
 
+  // 1. Função para carregar/recarregar os dados
+  const buscarDetalhes = async () => {
+    try {
+      const response = await api.get(`/api/sankhya/chamados/${id}`);
+      if (response.data.sucesso) {
+        const dados = response.data.dados;
+        setChamado(dados);
+        
+        // Sincroniza os selects com os dados reais do banco
+        setStatus(dados.idStatus); 
+        setPrioridade(dados.prioridade);
+      }
+    } catch (error) {
+      console.error('Erro ao buscar detalhes do chamado:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 2. Chama a busca na primeira vez que a tela abre
+  useEffect(() => {
     if (id) buscarDetalhes();
   }, [id]);
 
-  const handleSalvarAlteracoes = () => {
-    // Aqui entrará o PUT/POST para a API do Sankhya
-    console.log('A atualizar chamado:', { id, status, prioridade });
-    alert('Alterações prontas para serem guardadas (Falta ligar rota PUT)!');
+  // 3. Salvar Alterações (Status)
+  const handleSalvarAlteracoes = async () => {
+    setSalvando(true);
+
+    try {
+      // Adicionamos a prioridade no envio
+      const payload = {
+        codAnalista: CODIGO_ANALISTA_ATUAL,
+        idStatus: status,
+        prioridade: prioridade 
+      };
+
+      const response = await api.put(`/api/sankhya/chamados/${id}`, payload);
+
+      if (response.data.sucesso) {
+        alert('Alterações guardadas com sucesso!');
+        await buscarDetalhes(); 
+      } else {
+        alert('Erro ao guardar: ' + response.data.erro);
+      }
+    } catch (error) {
+      console.error('Erro ao salvar alterações:', error);
+      alert('Falha na conexão ao tentar atualizar o chamado.');
+    } finally {
+      setSalvando(false);
+    }
   };
 
-  const handleEnviarMensagem = (e: React.FormEvent) => {
+  // 4. Enviar nova mensagem/interação
+  const handleEnviarMensagem = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!novaMensagem.trim()) return;
     
-    console.log('Nova mensagem adicionada:', novaMensagem);
-    setNovaMensagem('');
-    alert('Comentário pronto para ser enviado (Falta ligar rota POST)!');
+    setEnviando(true);
+
+    try {
+      // Usando o código do analista logado!
+      const payload = {
+        codAnalista: CODIGO_ANALISTA_ATUAL, 
+        descricao: novaMensagem
+      };
+
+      const response = await api.post(`/api/sankhya/chamados/${id}/interacao`, payload);
+
+      if (response.data.sucesso) {
+        setNovaMensagem(''); // Limpa a caixa de texto
+        await buscarDetalhes(); // Recarrega a timeline
+      } else {
+        alert('Erro ao enviar mensagem: ' + response.data.erro);
+      }
+    } catch (error) {
+      console.error('Erro ao enviar interação:', error);
+      alert('Falha na conexão ao tentar enviar a resposta.');
+    } finally {
+      setEnviando(false);
+    }
   };
 
   // Tela de Carregamento
@@ -110,10 +199,9 @@ export function DetalhesChamado() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Coluna Principal (Esquerda): Descrição e Chat/Timeline */}
+        {/* Coluna Principal (Esquerda) */}
         <div className="lg:col-span-2 space-y-6">
           
-          {/* Cartão de Descrição Original */}
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
             <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2">
               <MessageSquare size={18} className="text-blue-600" />
@@ -124,15 +212,14 @@ export function DetalhesChamado() {
             </div>
           </div>
 
-          {/* Cartão de Timeline (Interações) */}
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-  <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-6 flex items-center gap-2">
-    <Clock size={18} className="text-blue-600" />
-    Histórico de Interações
-  </h2>
+            <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-6 flex items-center gap-2">
+              <Clock size={18} className="text-blue-600" />
+              Histórico de Interações
+            </h2>
             
             <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-gray-200 before:to-transparent">
-              {/* AQUI ESTÁ A MUDANÇA: Usamos chamado.interacoes */}
+              
               {chamado.interacoes.map((interacao: any) => (
                 <div key={interacao.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
                   
@@ -155,41 +242,95 @@ export function DetalhesChamado() {
 
             </div>
 
-            {/* Nova Mensagem */}
-            <form onSubmit={handleEnviarMensagem} className="mt-8 border-t border-gray-100 pt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Adicionar um comentário</label>
-              <div className="relative">
+            {/* ========================================== */}
+            {/* ÁREA DE INSERÇÃO DE COMENTÁRIOS E ANEXOS */}
+            {/* ========================================== */}
+            <div className="mt-8 border-t border-gray-100 pt-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Adicionar um comentário ou anexo</label>
+              
+              {/* Preview e Envio de Anexo */}
+              {arquivoSelecionado && (
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-lg flex flex-col gap-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-bold text-blue-800 flex items-center gap-2">
+                      <Paperclip size={16} /> {arquivoSelecionado.name}
+                    </span>
+                    <button 
+                      onClick={() => setArquivoSelecionado(null)} 
+                      disabled={enviandoAnexo}
+                      className="text-gray-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
+                  <input 
+                    type="text" 
+                    value={descricaoAnexo}
+                    onChange={(e) => setDescricaoAnexo(e.target.value)}
+                    placeholder="Escreva uma descrição para este ficheiro..."
+                    disabled={enviandoAnexo}
+                    className="w-full px-3 py-2 text-sm border border-blue-200 rounded outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                  />
+                  <button 
+                    onClick={handleEnviarAnexo}
+                    disabled={enviandoAnexo}
+                    className="w-full py-2 bg-blue-600 text-white text-sm font-bold rounded hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                  >
+                    {enviandoAnexo ? 'A enviar anexo...' : 'Confirmar Envio de Anexo'}
+                  </button>
+                </div>
+              )}
+
+              {/* Input de arquivo escondido */}
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                onChange={(e) => setArquivoSelecionado(e.target.files?.[0] || null)}
+              />
+
+              {/* Formulário de Mensagem Normal */}
+              <form onSubmit={handleEnviarMensagem} className="relative">
                 <textarea 
                   rows={3}
                   value={novaMensagem}
                   onChange={(e) => setNovaMensagem(e.target.value)}
                   placeholder="Escreva a sua mensagem ou atualização..."
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y"
+                  disabled={enviando || enviandoAnexo}
                 ></textarea>
                 <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                  <button type="button" className="p-2 text-gray-400 hover:text-gray-600 transition-colors" title="Anexar ficheiro">
+                  <button 
+                    type="button" 
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={enviando || enviandoAnexo}
+                    className="p-2 text-gray-400 hover:text-blue-600 transition-colors disabled:opacity-50" 
+                    title="Anexar ficheiro"
+                  >
                     <Paperclip size={18} />
                   </button>
-                  <button type="submit" className="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors shadow-sm">
-                    Enviar
+                  <button 
+                    type="submit" 
+                    disabled={enviando || enviandoAnexo || !!arquivoSelecionado}
+                    className="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 transition-colors shadow-sm disabled:opacity-50"
+                  >
+                    {enviando ? 'Enviando...' : 'Enviar'}
                   </button>
                 </div>
-              </div>
-            </form>
+              </form>
+            </div>
           </div>
         </div>
 
-        {/* Coluna Lateral (Direita): Gestão do Chamado */}
+        {/* Coluna Lateral (Direita) */}
         <div className="space-y-6">
           
-          {/* Ações Rápidas (Alterar Status/Prioridade) */}
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
             <h3 className="font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Gestão do Pedido</h3>
             
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Estado</label>
-                {/* O value agora lê o ID do dicionário do Node.js */}
                 <select 
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
@@ -209,34 +350,34 @@ export function DetalhesChamado() {
                   onChange={(e) => setPrioridade(e.target.value)}
                   className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                 >
-                  <option value="BAIXA">Baixa</option>
-                  <option value="MEDIA">Média</option>
-                  <option value="ALTA">Alta / Urgente</option>
+                  <option value="" disabled>Selecione...</option>
+                  <option value="NORMAL">Normal</option>
+                  <option value="URGENTE">Urgente</option>
+                  <option value="IMEDIATO">Imediato</option>
                 </select>
               </div>
 
               <button 
                 onClick={handleSalvarAlteracoes}
-                className="w-full mt-2 flex items-center justify-center gap-2 bg-slate-900 text-white py-2.5 rounded-lg text-sm font-bold hover:bg-slate-800 transition-colors"
+                disabled={salvando}
+                className="w-full mt-2 flex items-center justify-center gap-2 bg-slate-900 text-white py-2.5 rounded-lg text-sm font-bold hover:bg-slate-800 transition-colors disabled:opacity-50"
               >
-                <Save size={18} /> Guardar Alterações
+                <Save size={18} /> {salvando ? 'A guardar...' : 'Guardar Alterações'}
               </button>
             </div>
           </div>
 
-          {/* Cartão de Informações do Solicitante */}
           <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
             <h3 className="font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Detalhes do Solicitante</h3>
             
             <ul className="space-y-3 text-sm">
               <li className="flex flex-col">
                 <span className="text-xs text-gray-400 uppercase font-bold flex items-center gap-1"><User size={14}/> Nome</span>
-                {/* Idealmente a query traria o nome do usuário pelo CODUSUINC, aqui mostramos o contato/solicitante */}
                 <span className="font-medium text-gray-800">{chamado.contato}</span>
               </li>
               <li className="flex flex-col">
                 <span className="text-xs text-gray-400 uppercase font-bold flex items-center gap-1"><Building size={14}/> Setor Origem</span>
-                <span className="font-medium text-gray-800">{chamado.idSetorOrigem || 'Não informado'}</span>
+                <span className="font-medium text-gray-800">{chamado.nomeSetorOrigem}</span>
               </li>
               <li className="flex flex-col mt-2 pt-2 border-t border-gray-100">
                 <span className="text-xs text-gray-400 uppercase font-bold flex items-center gap-1"><Clock size={14}/> Aberto em</span>
