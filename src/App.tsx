@@ -17,16 +17,16 @@ function App() {
         toastOptions={{
           duration: 3000,
           style: {
-            background: '#334155', // Fundo escuro elegante
-            color: '#fff',         // Texto branco
+            background: '#334155', 
+            color: '#fff',        
             borderRadius: '10px',
             fontWeight: '500',
           },
           success: {
-            style: { background: '#10b981' }, // Verde para sucesso
+            style: { background: '#10b981' }, 
           },
           error: {
-            style: { background: '#ef4444' }, // Vermelho para erro
+            style: { background: '#ef4444' }, 
           },
         }} 
       />
