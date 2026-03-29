@@ -7,4 +7,16 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    host: true, // aceita conexões externas
+    allowedHosts: [
+      'ticketgo.semalo.com.br'
+    ]
+  },
+  preview: {
+    host: true,
+    allowedHosts: [
+      'ticketgo.semalo.com.br'
+    ]
+  }
 })
