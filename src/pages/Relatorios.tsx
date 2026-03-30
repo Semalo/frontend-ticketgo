@@ -66,7 +66,7 @@ export function Relatorios() {
 
       // 4. Chamada para a API
       const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const response = await fetch(`${baseUrl}/api/sankhya/relatorios?${queryParams.toString()}`, {
+      const response = await fetch(`${baseUrl}api/sankhya/relatorios?${queryParams.toString()}`, {
         headers: {
           'Authorization': authHeader 
         }
