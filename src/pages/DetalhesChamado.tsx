@@ -11,18 +11,21 @@ import {
   Paperclip,
   X,
   Lock,
-  Headset
+  Headset,
+  Ticket,
+  AlertCircle
 } from 'lucide-react';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext'; 
 import toast from 'react-hot-toast';
+
 export function DetalhesChamado() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  const codigoUsuario = user?.codigoUsuario; // Pegamos o código do usuário logado
-  const setorUsuarioLogado = user?.setorId; // Pegamos o setor do usuário logado
+  const codigoUsuario = user?.codigoUsuario;
+  const setorUsuarioLogado = user?.setorId;
 
   const [chamado, setChamado] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -38,9 +41,6 @@ export function DetalhesChamado() {
   const [descricaoAnexo, setDescricaoAnexo] = useState('');
   const [enviandoAnexo, setEnviandoAnexo] = useState(false);
 
-  // === NOVA REGRA DE PERMISSÃO ===
-  // Verifica se o setor logado é o mesmo setor destino do chamado.
-  // Usamos toString() para evitar erros caso um venha como número e o outro como string.
   const podeGerir = chamado && setorUsuarioLogado?.toString() === chamado.idSetorDestino?.toString();
 
   const handleEnviarAnexo = async () => {
@@ -78,7 +78,6 @@ export function DetalhesChamado() {
       if (response.data.sucesso) {
         const dados = response.data.dados;
         setChamado(dados);
-        
         setStatus(dados.idStatus); 
         setPrioridade(dados.prioridade);
       }
@@ -150,102 +149,154 @@ export function DetalhesChamado() {
     }
   };
 
+  // Função auxiliar para renderizar a etiqueta de estado consistente com a listagem
+  const renderStatusBadge = (idStatus: string, nomeStatus: string) => {
+    switch (idStatus) {
+      case '0': return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">{nomeStatus}</span>;
+      case '1': return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-800">{nomeStatus}</span>;
+      case '2': return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-800">{nomeStatus}</span>;
+      case '3': return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-green-100 text-green-800">{nomeStatus}</span>;
+      default: return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-800">{nomeStatus}</span>;
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64 text-gray-500">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mr-3"></div>
-        A carregar detalhes do pedido...
+      <div className="flex flex-col justify-center items-center h-64 text-gray-500">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600 mb-4"></div>
+        <p className="font-medium text-gray-900">A carregar detalhes do chamado...</p>
       </div>
     );
   }
 
   if (!chamado) {
     return (
-      <div className="text-center py-20">
-        <h2 className="text-2xl font-bold text-gray-700">Chamado não encontrado</h2>
-        <button onClick={() => navigate('/chamados')} className="mt-4 text-blue-600 hover:underline">Voltar para a lista</button>
+      <div className="px-6 py-16 text-center flex flex-col items-center justify-center bg-white rounded-xl shadow-sm max-w-2xl mx-auto mt-10">
+        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 mb-4">
+          <Ticket className="h-8 w-8 text-gray-400" aria-hidden="true" />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900">Chamado não encontrado</h2>
+        <p className="mt-2 text-sm text-gray-500 mb-6">Não foi possível localizar as informações para este ID.</p>
+        <button 
+          onClick={() => navigate('/chamados')} 
+          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <ArrowLeft size={18} /> Voltar para a lista
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
-      {/* Cabeçalho */}
-      <div className="flex items-center gap-4 mb-6">
-        <button 
-          onClick={() => navigate('/chamados')} 
-          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold text-gray-900">{chamado.idChamado}</h1>
-            <span className="px-2.5 py-1 bg-purple-100 text-purple-700 text-xs font-semibold rounded-full border border-purple-200">
-              {chamado.nomeStatus}
-            </span>
+      {/* Cabeçalho da Página */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate('/chamados')} 
+            className="p-2.5 text-gray-500 bg-white border border-gray-200 shadow-sm hover:text-gray-700 hover:bg-gray-50 rounded-xl transition-colors"
+            title="Voltar"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <div className="flex items-center gap-3 mb-1">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
+                #{chamado.idChamado}
+              </h1>
+              {renderStatusBadge(chamado.idStatus, chamado.nomeStatus)}
+            </div>
+            <p className="text-gray-500 text-sm sm:text-base font-medium flex items-center gap-2">
+              <Ticket size={16} className="text-gray-400" />
+              {chamado.nomeAssunto}
+            </p>
           </div>
-          <p className="text-gray-500 mt-1 font-medium">{chamado.nomeAssunto}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
-        {/* Coluna Esquerda (Descrição, Histórico, Comentários) */}
+        {/* Coluna Esquerda Principal */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-4 flex items-center gap-2">
+          
+          {/* Cartão de Descrição */}
+          <div className="bg-white ring-1 ring-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
               <MessageSquare size={18} className="text-blue-600" />
-              Descrição do Pedido
-            </h2>
-            <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 text-gray-700 leading-relaxed whitespace-pre-wrap">
-              {chamado.problema || 'Nenhuma descrição detalhada informada.'}
+              <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Descrição do Pedido</h2>
+            </div>
+            <div className="p-6">
+              <div className="text-gray-700 leading-relaxed whitespace-pre-wrap text-sm sm:text-base">
+                {chamado.problema || <span className="text-gray-400 italic">Nenhuma descrição detalhada informada.</span>}
+              </div>
             </div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6">
-            <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider mb-6 flex items-center gap-2">
+          {/* Cartão de Histórico */}
+          <div className="bg-white ring-1 ring-gray-200 rounded-2xl shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
               <Clock size={18} className="text-blue-600" />
-              Histórico de Interações
-            </h2>
+              <h2 className="text-sm font-bold text-gray-800 uppercase tracking-wider">Histórico de Interações</h2>
+            </div>
             
-            <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-linear-to-b before:from-transparent before:via-gray-200 before:to-transparent">
-              {chamado.interacoes?.map((interacao: any) => (
-                <div key={interacao.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                  <div className="flex items-center justify-center w-10 h-10 rounded-full border-4 border-white bg-blue-100 text-blue-600 shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-sm z-10">
-                    {interacao.tipo === 'comentario' ? <MessageSquare size={16} /> : <CheckCircle2 size={16} />}
-                  </div>
-                  <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-4 rounded-xl border border-gray-200 bg-white shadow-sm">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="font-bold text-gray-900 text-sm">{interacao.autor}</span>
-                      <span className="text-xs text-gray-500 font-medium">{interacao.data}</span>
+            <div className="p-6">
+              {/* Timeline */}
+              <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 md:before:ml-6 before:-translate-x-px before:h-full before:w-0.5 before:bg-linear-to-b before:from-gray-100 before:via-gray-200 before:to-gray-100">
+                {chamado.interacoes?.length > 0 ? chamado.interacoes.map((interacao: any) => (
+                  <div key={interacao.id} className="relative flex items-start gap-4 md:gap-6">
+                    <div className={`flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full border-4 border-white shrink-0 z-10 shadow-sm
+                      ${interacao.tipo === 'status' ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-600'}`}>
+                      {interacao.tipo === 'comentario' ? <MessageSquare size={18} /> : <CheckCircle2 size={18} />}
                     </div>
-                    <p className={`text-sm ${interacao.tipo === 'status' ? 'text-gray-500 italic' : 'text-gray-700 whitespace-pre-wrap'}`}>
-                      {interacao.texto}
-                    </p>
+                    <div className="flex-1 min-w-0 bg-white ring-1 ring-gray-200 p-4 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+                      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-2 gap-1">
+                        <span className="font-semibold text-gray-900 text-sm flex items-center gap-2">
+                          <User size={14} className="text-gray-400"/> {interacao.autor}
+                        </span>
+                        <span className="text-xs text-gray-500 font-medium bg-gray-50 px-2 py-1 rounded-md w-fit">
+                          {interacao.data}
+                        </span>
+                      </div>
+                      <p className={`text-sm leading-relaxed ${interacao.tipo === 'status' ? 'text-gray-500 italic' : 'text-gray-700 whitespace-pre-wrap'}`}>
+                        {interacao.texto}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )) : (
+                  <div className="text-center py-8 text-gray-500 text-sm">Nenhuma interação registada até ao momento.</div>
+                )}
+              </div>
             </div>
 
-            {/* ÁREA DE INTERAÇÃO (Qualquer um pode mandar msg/anexo) */}
-            <div className="mt-8 border-t border-gray-100 pt-6">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Adicionar um comentário ou anexo</label>
+            {/* ÁREA DE NOVA INTERAÇÃO */}
+            <div className="bg-gray-50 p-6 border-t border-gray-200">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">Adicionar uma atualização ou anexo</label>
               
               {arquivoSelecionado && (
-                <div className="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-lg flex flex-col gap-3">
+                <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-xl flex flex-col gap-3 shadow-sm">
                   <div className="flex justify-between items-center">
                     <span className="text-sm font-bold text-blue-800 flex items-center gap-2">
                       <Paperclip size={16} /> {arquivoSelecionado.name}
                     </span>
-                    <button onClick={() => setArquivoSelecionado(null)} disabled={enviandoAnexo} className="text-gray-400 hover:text-red-500">
+                    <button onClick={() => setArquivoSelecionado(null)} disabled={enviandoAnexo} className="p-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                       <X size={18} />
                     </button>
                   </div>
-                  <input type="text" value={descricaoAnexo} onChange={(e) => setDescricaoAnexo(e.target.value)} placeholder="Escreva uma descrição para este ficheiro..." disabled={enviandoAnexo} className="w-full px-3 py-2 text-sm border border-blue-200 rounded outline-none focus:ring-2 focus:ring-blue-500" />
-                  <button onClick={handleEnviarAnexo} disabled={enviandoAnexo} className="w-full py-2 bg-blue-600 text-white text-sm font-bold rounded hover:bg-blue-700 disabled:opacity-50">
-                    {enviandoAnexo ? 'A enviar anexo...' : 'Confirmar Envio de Anexo'}
+                  <input 
+                    type="text" 
+                    value={descricaoAnexo} 
+                    onChange={(e) => setDescricaoAnexo(e.target.value)} 
+                    placeholder="Escreva uma descrição para este ficheiro..." 
+                    disabled={enviandoAnexo} 
+                    className="w-full px-3 py-2 text-sm border border-blue-200 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 shadow-sm" 
+                  />
+                  <button 
+                    onClick={handleEnviarAnexo} 
+                    disabled={enviandoAnexo} 
+                    className="w-full py-2.5 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex justify-center items-center gap-2 shadow-sm"
+                  >
+                    {enviandoAnexo ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> A enviar anexo...</> : 'Confirmar Envio de Anexo'}
                   </button>
                 </div>
               )}
@@ -253,33 +304,60 @@ export function DetalhesChamado() {
               <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => setArquivoSelecionado(e.target.files?.[0] || null)} />
 
               <form onSubmit={handleEnviarMensagem} className="relative">
-                <textarea rows={3} value={novaMensagem} onChange={(e) => setNovaMensagem(e.target.value)} placeholder="Escreva a sua mensagem ou atualização..." className="w-full px-4 py-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none resize-y" disabled={enviando || enviandoAnexo}></textarea>
-                <div className="absolute bottom-3 right-3 flex items-center gap-2">
-                  <button type="button" onClick={() => fileInputRef.current?.click()} disabled={enviando || enviandoAnexo} className="p-2 text-gray-400 hover:text-blue-600" title="Anexar ficheiro"><Paperclip size={18} /></button>
-                  <button type="submit" disabled={enviando || enviandoAnexo || !!arquivoSelecionado || !novaMensagem.trim()} className="px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50">
-                    {enviando ? 'Enviando...' : 'Enviar'}
-                  </button>
+                <div className="overflow-hidden rounded-xl border border-gray-300 shadow-sm focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 bg-white">
+                  <textarea 
+                    rows={3} 
+                    value={novaMensagem} 
+                    onChange={(e) => setNovaMensagem(e.target.value)} 
+                    placeholder="Escreva a sua mensagem ou atualização aqui..." 
+                    className="block w-full resize-y border-0 py-3 px-4 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6 min-h-25" 
+                    disabled={enviando || enviandoAnexo}
+                  />
+                  
+                  {/* Footer do Textarea */}
+                  <div className="flex items-center justify-between py-2.5 px-3 bg-white border-t border-gray-100">
+                    <button 
+                      type="button" 
+                      onClick={() => fileInputRef.current?.click()} 
+                      disabled={enviando || enviandoAnexo} 
+                      className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                      title="Anexar ficheiro"
+                    >
+                      <Paperclip size={18} /> <span className="hidden sm:inline">Anexar</span>
+                    </button>
+                    
+                    <button 
+                      type="submit" 
+                      disabled={enviando || enviandoAnexo || !!arquivoSelecionado || !novaMensagem.trim()} 
+                      className="inline-flex items-center gap-2 px-4 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                    >
+                      {enviando ? 'A enviar...' : 'Enviar Mensagem'}
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
           </div>
         </div>
 
-        {/* Coluna Direita (Status, Prioridade, Solicitante) */}
+        {/* Coluna Direita (Sidebar) */}
         <div className="space-y-6">
           
-          {/* GESTÃO DO PEDIDO COM TRAVA DE SEGURANÇA */}
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
-            <h3 className="font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Gestão do Pedido</h3>
+          {/* GESTÃO DO PEDIDO */}
+          <div className="bg-white ring-1 ring-gray-200 rounded-2xl shadow-sm p-6">
+            <h3 className="font-bold text-gray-900 mb-5 border-b border-gray-100 pb-3 flex items-center gap-2">
+              <AlertCircle size={18} className="text-slate-600" />
+              Gestão do Pedido
+            </h3>
             
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Estado</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Estado Atual</label>
                 <select 
                   value={status}
                   onChange={(e) => setStatus(e.target.value)}
-                  disabled={!podeGerir} // Bloqueia se não for do setor destino
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={!podeGerir} 
+                  className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-gray-900 shadow-sm disabled:opacity-60 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
                 >
                   <option value="0">Aguardando usuário</option>
                   <option value="1">Aberto</option>
@@ -289,12 +367,12 @@ export function DetalhesChamado() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Prioridade</label>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Prioridade</label>
                 <select 
                   value={prioridade}
                   onChange={(e) => setPrioridade(e.target.value)}
-                  disabled={!podeGerir} // Bloqueia se não for do setor destino
-                  className="w-full px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium disabled:opacity-60 disabled:cursor-not-allowed"
+                  disabled={!podeGerir} 
+                  className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-gray-900 shadow-sm disabled:opacity-60 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
                 >
                   <option value="" disabled>Selecione...</option>
                   <option value="NORMAL">Normal</option>
@@ -303,56 +381,58 @@ export function DetalhesChamado() {
                 </select>
               </div>
 
-              {/* Só mostra o botão de Guardar se tiver permissão, senão mostra um aviso */}
               {podeGerir ? (
                 <button 
                   onClick={handleSalvarAlteracoes}
                   disabled={salvando}
-                  className="w-full mt-2 flex items-center justify-center gap-2 bg-slate-900 text-white py-2.5 rounded-lg text-sm font-bold hover:bg-slate-800 transition-colors disabled:opacity-50"
+                  className="w-full mt-4 flex items-center justify-center gap-2 bg-slate-800 text-white py-3 rounded-xl text-sm font-bold hover:bg-slate-900 transition-all shadow-sm active:scale-[0.98] disabled:opacity-70"
                 >
                   <Save size={18} /> {salvando ? 'A guardar...' : 'Guardar Alterações'}
                 </button>
               ) : (
-                <div className="mt-4 flex items-start gap-2 text-xs text-amber-700 bg-amber-50 p-3 rounded-lg border border-amber-200">
-                  <Lock size={16} className="shrink-0 mt-0.5" />
-                  <p>Apenas analistas do setor de destino podem alterar o estado ou prioridade.</p>
+                <div className="mt-4 flex items-start gap-2.5 text-xs text-amber-800 bg-amber-50 p-3.5 rounded-xl border border-amber-200/60 leading-relaxed">
+                  <Lock size={16} className="shrink-0 mt-0.5 text-amber-600" />
+                  <p>Apenas analistas do <strong>setor de destino</strong> podem alterar o estado ou prioridade deste chamado.</p>
                 </div>
               )}
-
             </div>
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5">
-            <h3 className="font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2">Detalhes do Solicitante</h3>
-            <ul className="space-y-3 text-sm">
-              <li className="flex flex-col">
-                <span className="text-xs text-gray-400 uppercase font-bold flex items-center gap-1"><User size={14}/> Nome</span>
-                <span className="font-medium text-gray-800">{chamado.contato}</span>
+          {/* DETALHES DO SOLICITANTE */}
+          <div className="bg-white ring-1 ring-gray-200 rounded-2xl shadow-sm p-6">
+            <h3 className="font-bold text-gray-900 mb-5 border-b border-gray-100 pb-3 flex items-center gap-2">
+              <User size={18} className="text-slate-600" />
+              Detalhes do Solicitante
+            </h3>
+            <ul className="space-y-4 text-sm">
+              <li className="flex flex-col gap-1">
+                <span className="text-xs text-gray-400 uppercase font-bold flex items-center gap-1.5"><User size={14}/> Nome do Utilizador</span>
+                <span className="font-medium text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">{chamado.contato}</span>
               </li>
-              <li className="flex flex-col">
-                <span className="text-xs text-gray-400 uppercase font-bold flex items-center gap-1"><Building size={14}/> Setor Origem</span>
-                <span className="font-medium text-gray-800">{chamado.nomeSetorOrigem}</span>
+              <li className="flex flex-col gap-1">
+                <span className="text-xs text-gray-400 uppercase font-bold flex items-center gap-1.5"><Building size={14}/> Setor de Origem</span>
+                <span className="font-medium text-gray-800 bg-gray-50 px-3 py-2 rounded-lg border border-gray-100">{chamado.nomeSetorOrigem}</span>
               </li>
-              <li className="flex flex-col mt-2 pt-2 border-t border-gray-100">
-                <span className="text-xs text-gray-400 uppercase font-bold flex items-center gap-1"><Clock size={14}/> Aberto em</span>
+              <li className="flex flex-col gap-1 pt-2 border-t border-gray-100">
+                <span className="text-xs text-gray-400 uppercase font-bold flex items-center gap-1.5"><Clock size={14}/> Data de Abertura</span>
                 <span className="font-medium text-gray-800">{chamado.dataAbertura}</span>
               </li>
             </ul>
           </div>
+          
+          {/* DETALHES DO ATENDIMENTO (Opcional) */}
           {chamado?.nomeAtendente && (
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-5 mt-6">
-              <h3 className="font-bold text-gray-900 mb-4 border-b border-gray-100 pb-2 flex items-center gap-2">
+            <div className="bg-linear-to-b from-blue-50 to-white ring-1 ring-blue-100 rounded-2xl shadow-sm p-6">
+              <h3 className="font-bold text-gray-900 mb-4 border-b border-blue-100 pb-3 flex items-center gap-2">
                 <Headset size={18} className="text-blue-600" /> 
-                Detalhes do Atendimento
+                Atendimento
               </h3>
-              
               <ul className="space-y-3 text-sm">
-                {/* Nome do Atendente */}
-                <li className="flex flex-col">
-                  <span className="text-xs text-gray-400 uppercase font-bold flex items-center gap-1">
-                    <User size={14}/> Atendido por
+                <li className="flex flex-col gap-1">
+                  <span className="text-xs text-blue-500/80 uppercase font-bold flex items-center gap-1.5">
+                    <User size={14}/> Analista Responsável
                   </span>
-                  <span className="font-medium text-gray-800">{chamado.nomeAtendente}</span>
+                  <span className="font-semibold text-blue-900">{chamado.nomeAtendente}</span>
                 </li>
               </ul>
             </div>

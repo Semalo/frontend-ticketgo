@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
-import { Headset, User} from 'lucide-react'; // Adicionamos mais ícones aqui
+import { Headset, User, Lock, LogIn, Loader2 } from 'lucide-react'; 
 
 export function Login() {
   const { carregarPerfilUsuario } = useAuth();
@@ -41,97 +41,97 @@ export function Login() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-slate-50 to-slate-200 p-4 font-sans">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden font-sans px-4 sm:px-6 lg:px-8">
       
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl shadow-slate-200/50 border border-slate-100 p-8 sm:p-10">
+      {/* Elementos Decorativos de Fundo (Blur/Glow) */}
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-400/20 rounded-full blur-3xl pointer-events-none"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none"></div>
+
+      {/* Cartão de Login */}
+      <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-slate-900/5 p-8 sm:p-10 relative z-10 transition-all">
         
-        {/* Cabeçalho do Login com a Logo */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-900/20">
-              <Headset className="text-white" size={28} />
-            </div>
-            <h1 className="text-4xl font-extrabold tracking-tight text-slate-800">
-              Ticket<span className="text-blue-600">Go</span>
-            </h1>
+        {/* Cabeçalho do Cartão (Logo) */}
+        <div className="flex flex-col items-center mb-10">
+          <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-900/20 mb-4">
+            <Headset className="text-white" size={32} strokeWidth={2.5} />
           </div>
-          <p className="text-slate-500 text-sm font-medium">Acesse o portal de atendimento</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+            Ticket<span className="text-blue-600">Go</span>
+          </h1>
+          <p className="text-sm text-slate-500 mt-2 text-center">
+            Insira as suas credenciais para aceder ao portal.
+          </p>
         </div>
 
         {/* Formulário */}
-        <form onSubmit={handleLogin} className="space-y-5">
-
-          {/* Campo: Usuário */}
-          <div>
-            <label htmlFor="username" className="block text-sm font-semibold text-slate-700 mb-1.5">
+        <form onSubmit={handleLogin} className="space-y-6">
+          
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-slate-700">
               Usuário
             </label>
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                <User className="h-5 w-5 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
+            <div className="relative rounded-xl shadow-sm">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                <User className="h-5 w-5 text-slate-400" aria-hidden="true" />
               </div>
               <input
-                id="username"
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="Digite seu usuário"
-                disabled={loading}
-                className="w-full pl-11 pr-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all disabled:bg-slate-50 disabled:text-slate-500 font-medium text-slate-700"
+                placeholder="Ex: joao.silva"
                 required
+                disabled={loading}
+                className="block w-full rounded-xl border-0 py-3 pl-11 pr-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all disabled:opacity-50 disabled:bg-slate-50"
               />
             </div>
           </div>
 
-          {/* Campo: Senha */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-              Senha
+          <div className="space-y-1.5">
+            <label className="block text-sm font-semibold text-slate-700">
+              Palavra-passe
             </label>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
+            <div className="relative rounded-xl shadow-sm">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
+                <Lock className="h-5 w-5 text-slate-400" aria-hidden="true" />
               </div>
               <input
-                id="password"
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Senha"
-                disabled={loading}
-                className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all disabled:bg-gray-50 disabled:text-gray-500"
+                placeholder="••••••••"
                 required
+                disabled={loading}
+                className="block w-full rounded-xl border-0 py-3 pl-11 pr-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all disabled:opacity-50 disabled:bg-slate-50"
               />
             </div>
           </div>
 
-          {/* Botão de Submit */}
           <button
             type="submit"
-            disabled={loading}
-            className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold py-3.5 px-4 rounded-xl transition-all duration-200 shadow-lg shadow-blue-600/30 focus:ring-4 focus:ring-blue-500/50 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+            disabled={loading || !username || !password}
+            className="mt-8 w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-xl transition-all shadow-lg shadow-blue-600/30 focus:ring-4 focus:ring-blue-500/50 disabled:opacity-70 disabled:cursor-not-allowed group"
           >
             {loading ? (
               <>
-                <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Autenticando...
+                <Loader2 size={20} className="animate-spin" />
+                A validar credenciais...
               </>
             ) : (
-              'Entrar no sistema'
+              <>
+                Entrar no Sistema
+                <LogIn size={18} className="group-hover:translate-x-1 transition-transform" />
+              </>
             )}
           </button>
 
         </form>
-
-        <div className="mt-8 pt-6 border-t border-slate-100 text-center text-sm text-slate-500">
-          Problemas com o acesso? <a href="https://w.app/suportetisemalo" className="text-blue-600 hover:text-blue-700 hover:underline font-semibold transition-colors">Contate a TI</a>
+        
+        {/* Rodapé do Cartão */}
+        <div className="mt-8 text-center">
+          <p className="text-xs text-slate-500">
+            Acesso restrito a colaboradores autorizados.
+          </p>
         </div>
-
       </div>
     </div>
   );
