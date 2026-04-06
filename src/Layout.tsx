@@ -8,7 +8,8 @@ import {
   Menu, 
   User,
   X,
-  Headset
+  Headset,
+  RefreshCw // <-- 1. Adicionámos o ícone de Refresh aqui
 } from 'lucide-react';
 
 import api from './services/api';
@@ -112,7 +113,7 @@ export function Layout() {
           </nav>
         </div>
 
-        {/* Rodapé do Menu (Opcional - Exibe a versão ou ajuda) */}
+        {/* Rodapé do Menu */}
         <div className="p-4 border-t border-slate-800/60 text-xs text-slate-500 text-center font-medium">
           TicketGo v1.0.0
         </div>
@@ -138,9 +139,24 @@ export function Layout() {
             </h2>
           </div>
 
-          <div className="flex items-center gap-4 sm:gap-6">          
-            <div className="h-8 w-px bg-slate-200 hidden sm:block"></div>
+          {/* Área de Ações e Perfil */}
+          <div className="flex items-center gap-2 sm:gap-4">          
+            
+            {/* 2. INÍCIO: NOVO BOTÃO DE REFRESH */}
+            <button
+              onClick={() => window.location.reload()}
+              title="Atualizar página"
+              className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 flex items-center justify-center group"
+            >
+              <RefreshCw 
+                size={20} 
+                className="group-hover:rotate-180 transition-transform duration-500 ease-in-out" 
+              />
+            </button>
+            {/* FIM: NOVO BOTÃO DE REFRESH */}
 
+            <div className="h-8 w-px bg-slate-200 hidden sm:block ml-2 mr-2"></div>
+            
             {/* ÁREA DO PERFIL DO USUÁRIO */}
             <div className="relative">
               <button 
