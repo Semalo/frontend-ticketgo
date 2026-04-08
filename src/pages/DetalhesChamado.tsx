@@ -18,6 +18,8 @@ import {
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext'; 
 import toast from 'react-hot-toast';
+// Importação do dicionário de setores adicionada aqui
+import { SETORES_MAP } from '../utils/dicionarios'; 
 
 export function DetalhesChamado() {
   const { id } = useParams();
@@ -33,6 +35,7 @@ export function DetalhesChamado() {
 
   const [status, setStatus] = useState('');
   const [prioridade, setPrioridade] = useState('');
+  const [setorDestino, setSetorDestino] = useState(''); // Novo estado para o setor de destino
   const [novaMensagem, setNovaMensagem] = useState('');
   const [salvando, setSalvando] = useState(false);
 
@@ -80,6 +83,7 @@ export function DetalhesChamado() {
         setChamado(dados);
         setStatus(dados.idStatus); 
         setPrioridade(dados.prioridade);
+        setSetorDestino(dados.idSetorDestino?.toString() || ''); // Inicializa o setor de destino atual
       }
     } catch (error) {
       console.error('Erro ao buscar detalhes do chamado:', error);
@@ -99,11 +103,18 @@ export function DetalhesChamado() {
     setSalvando(true);
 
     try {
-      const payload = {
+      // Cria o payload base que sempre será enviado
+      const payload: any = {
         codAnalista: codigoUsuario,
         idStatus: status,
-        prioridade: prioridade 
+        prioridade: prioridade,
       };
+
+      // REGRA: Só adiciona o idSetorDestino no payload se ele for diferente do original que veio do banco
+      const setorOriginal = chamado.idSetorDestino?.toString();
+      if (setorDestino && setorDestino !== setorOriginal) {
+        payload.idSetorDestino = setorDestino;
+      }
 
       const response = await api.put(`/api/sankhya/chamados/${id}`, payload);
 
@@ -149,7 +160,6 @@ export function DetalhesChamado() {
     }
   };
 
-  // Função auxiliar para renderizar a etiqueta de estado consistente com a listagem
   const renderStatusBadge = (idStatus: string, nomeStatus: string) => {
     switch (idStatus) {
       case '0': return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-yellow-100 text-yellow-800">{nomeStatus}</span>;
@@ -190,7 +200,6 @@ export function DetalhesChamado() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
       
-      {/* Cabeçalho da Página */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <button 
@@ -217,10 +226,8 @@ export function DetalhesChamado() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         
-        {/* Coluna Esquerda Principal */}
         <div className="lg:col-span-2 space-y-6">
           
-          {/* Cartão de Descrição */}
           <div className="bg-white ring-1 ring-gray-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
               <MessageSquare size={18} className="text-blue-600" />
@@ -233,7 +240,6 @@ export function DetalhesChamado() {
             </div>
           </div>
 
-          {/* Cartão de Histórico */}
           <div className="bg-white ring-1 ring-gray-200 rounded-2xl shadow-sm overflow-hidden">
             <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50 flex items-center gap-2">
               <Clock size={18} className="text-blue-600" />
@@ -241,7 +247,6 @@ export function DetalhesChamado() {
             </div>
             
             <div className="p-6">
-              {/* Timeline */}
               <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 md:before:ml-6 before:-translate-x-px before:h-full before:w-0.5 before:bg-linear-to-b before:from-gray-100 before:via-gray-200 before:to-gray-100">
                 {chamado.interacoes?.length > 0 ? chamado.interacoes.map((interacao: any) => (
                   <div key={interacao.id} className="relative flex items-start gap-4 md:gap-6">
@@ -269,7 +274,6 @@ export function DetalhesChamado() {
               </div>
             </div>
 
-            {/* ÁREA DE NOVA INTERAÇÃO */}
             <div className="bg-gray-50 p-6 border-t border-gray-200">
               <label className="block text-sm font-semibold text-gray-700 mb-3">Adicionar uma atualização ou anexo</label>
               
@@ -314,7 +318,6 @@ export function DetalhesChamado() {
                     disabled={enviando || enviandoAnexo}
                   />
                   
-                  {/* Footer do Textarea */}
                   <div className="flex items-center justify-between py-2.5 px-3 bg-white border-t border-gray-100">
                     <button 
                       type="button" 
@@ -340,10 +343,8 @@ export function DetalhesChamado() {
           </div>
         </div>
 
-        {/* Coluna Direita (Sidebar) */}
         <div className="space-y-6">
           
-          {/* GESTÃO DO PEDIDO */}
           <div className="bg-white ring-1 ring-gray-200 rounded-2xl shadow-sm p-6">
             <h3 className="font-bold text-gray-900 mb-5 border-b border-gray-100 pb-3 flex items-center gap-2">
               <AlertCircle size={18} className="text-slate-600" />
@@ -381,6 +382,22 @@ export function DetalhesChamado() {
                 </select>
               </div>
 
+              {/* NOVO CAMPO: Transferir para o Setor */}
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Transferir para o Setor</label>
+                <select 
+                  value={setorDestino}
+                  onChange={(e) => setSetorDestino(e.target.value)}
+                  disabled={!podeGerir} 
+                  className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none font-medium text-gray-900 shadow-sm disabled:opacity-60 disabled:bg-gray-50 disabled:cursor-not-allowed transition-all"
+                >
+                  <option value="" disabled>Selecione um setor...</option>
+                  {Object.entries(SETORES_MAP).map(([id, nome]) => (
+                    <option key={id} value={id}>{nome}</option>
+                  ))}
+                </select>
+              </div>
+
               {podeGerir ? (
                 <button 
                   onClick={handleSalvarAlteracoes}
@@ -392,13 +409,12 @@ export function DetalhesChamado() {
               ) : (
                 <div className="mt-4 flex items-start gap-2.5 text-xs text-amber-800 bg-amber-50 p-3.5 rounded-xl border border-amber-200/60 leading-relaxed">
                   <Lock size={16} className="shrink-0 mt-0.5 text-amber-600" />
-                  <p>Apenas analistas do <strong>setor de destino</strong> podem alterar o estado ou prioridade deste chamado.</p>
+                  <p>Apenas analistas do <strong>setor de destino</strong> podem alterar o estado, a prioridade ou transferir este chamado.</p>
                 </div>
               )}
             </div>
           </div>
 
-          {/* DETALHES DO SOLICITANTE */}
           <div className="bg-white ring-1 ring-gray-200 rounded-2xl shadow-sm p-6">
             <h3 className="font-bold text-gray-900 mb-5 border-b border-gray-100 pb-3 flex items-center gap-2">
               <User size={18} className="text-slate-600" />
@@ -420,7 +436,6 @@ export function DetalhesChamado() {
             </ul>
           </div>
           
-          {/* DETALHES DO ATENDIMENTO (Opcional) */}
           {chamado?.nomeAtendente && (
             <div className="bg-linear-to-b from-blue-50 to-white ring-1 ring-blue-100 rounded-2xl shadow-sm p-6">
               <h3 className="font-bold text-gray-900 mb-4 border-b border-blue-100 pb-3 flex items-center gap-2">
