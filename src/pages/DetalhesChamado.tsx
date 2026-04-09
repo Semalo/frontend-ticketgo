@@ -314,7 +314,7 @@ export function DetalhesChamado() {
                     value={novaMensagem} 
                     onChange={(e) => setNovaMensagem(e.target.value)} 
                     placeholder="Escreva a sua mensagem ou atualização aqui..." 
-                    className="block w-full resize-y border-0 py-3 px-4 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6 min-h-25" 
+                    className="block w-full resize-y border-0 py-3 px-4 border-b-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6 min-h-25" 
                     disabled={enviando || enviandoAnexo}
                   />
                   
