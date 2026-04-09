@@ -309,12 +309,12 @@ export function DetalhesChamado() {
 
               <form onSubmit={handleEnviarMensagem} className="relative">
                 <div className="overflow-hidden rounded-xl border border-gray-300 shadow-sm focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 bg-white">
-                  <textarea 
-                    rows={3} 
-                    value={novaMensagem} 
-                    onChange={(e) => setNovaMensagem(e.target.value)} 
-                    placeholder="Escreva a sua mensagem ou atualização aqui..." 
-                    className="block w-full resize-y border-0 py-3 px-4 border-b-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6 min-h-25" 
+                  <textarea
+                    rows={3}
+                    value={novaMensagem}
+                    onChange={(e) => setNovaMensagem(e.target.value)}
+                    placeholder="Escreva a sua mensagem ou atualização aqui..."
+                    className="block w-full resize-y border-0 py-3 px-4 border-b-gray-300 text-gray-900 placeholder:text-gray-400 focus:ring-0 focus:outline-none outline-none sm:text-sm sm:leading-6 min-h-25"
                     disabled={enviando || enviandoAnexo}
                   />
                   
