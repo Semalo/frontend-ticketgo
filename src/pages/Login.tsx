@@ -81,7 +81,7 @@ export function Login() {
                 placeholder="Ex: joao.silva"
                 required
                 disabled={loading}
-                className="block w-full rounded-xl border-0 py-3 pl-11 pr-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all disabled:opacity-50 disabled:bg-slate-50"
+                className="block w-full focus:outline-none outline-none rounded-xl border-0 py-3 pl-11 pr-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all disabled:opacity-50 disabled:bg-slate-50"
               />
             </div>
           </div>
@@ -101,7 +101,7 @@ export function Login() {
                 placeholder="••••••••"
                 required
                 disabled={loading}
-                className="block w-full rounded-xl border-0 py-3 pl-11 pr-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all disabled:opacity-50 disabled:bg-slate-50"
+                className="block w-full focus:outline-none outline-none rounded-xl border-0 py-3 pl-11 pr-4 text-slate-900 ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-blue-600 sm:text-sm sm:leading-6 transition-all disabled:opacity-50 disabled:bg-slate-50"
               />
             </div>
           </div>

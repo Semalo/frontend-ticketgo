@@ -53,7 +53,7 @@ export function Perfil() {
         </div>
 
         {/* COLUNA DIREITA: Credenciais do Sistema (ERP) */}
-        <div className="lg:col-span-2 bg-white ring-1 ring-gray-200 rounded-2xl shadow-sm overflow-hidden flex flex-col h-full">
+        <div className="lg:col-span-2 bg-white ring-1 ring-gray-200 rounded-2xl shadow-sm overflow-hidden flex flex-col">
           
           <div className="px-6 py-5 border-b border-gray-100 bg-slate-50/50 flex items-center gap-2">
             <Shield size={18} className="text-slate-600" />
@@ -70,16 +70,6 @@ export function Perfil() {
                 {user?.codigoUsuario || '-'}
               </div>
             </div>
-
-            <div className="space-y-1.5">
-              <span className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1.5 mb-1">
-                <Building size={14} className="text-blue-500" /> Setor (Centro de Custo)
-              </span>
-              <div className="font-semibold text-gray-900 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200/60 shadow-sm truncate" title={user?.setorNome}>
-                {user?.setorNome || '-'}
-              </div>
-            </div>
-
             <div className="space-y-1.5">
               <span className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1.5 mb-1">
                 <Briefcase size={14} className="text-blue-500" /> Código do Parceiro
@@ -87,17 +77,7 @@ export function Perfil() {
               <div className="font-semibold text-gray-900 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200/60 shadow-sm">
                 {user?.codigoParceiro || 'Não informado'}
               </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <span className="text-xs font-bold text-gray-500 uppercase flex items-center gap-1.5 mb-1">
-                <Shield size={14} className="text-blue-500" /> Código do Grupo
-              </span>
-              <div className="font-semibold text-gray-900 bg-slate-50 px-4 py-3 rounded-xl border border-slate-200/60 shadow-sm">
-                {user?.codigoGrupo || '-'}
-              </div>
-            </div>
-
+            </div> 
           </div>
 
           <div className="px-6 py-4 bg-slate-50 border-t border-gray-100 text-xs text-slate-500 leading-relaxed">
