@@ -8,7 +8,6 @@ import {
   Menu, 
   User,
   X,
-  Headset,
   RefreshCw // <-- 1. Adicionámos o ícone de Refresh aqui
 } from 'lucide-react';
 
@@ -63,11 +62,8 @@ export function Layout() {
       `}>
         {/* Área da Logo */}
         <div className="h-20 flex items-center px-6 bg-slate-900 border-b border-slate-800/60 justify-between lg:justify-center shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-xl shadow-lg shadow-blue-900/20">
-              <Headset className="text-white" size={24} strokeWidth={2.5} />
-            </div>
-            <h1 className="text-2xl font-bold tracking-tight text-white">
+          <div className="flex items-center">
+            <h1 className="text-4xl font-bold tracking-tight text-white">
               Ticket<span className="text-blue-500">Go</span>
             </h1>
           </div>
