@@ -1,5 +1,5 @@
 import { User, Mail, Building, Briefcase, Shield, Fingerprint, IdCard } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 
 export function Perfil() {
   // Extraímos os dados reais do usuário logado através do nosso Context API

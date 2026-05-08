@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { 
+import {
   Filter, 
   Download, 
   FileText, 
@@ -10,20 +10,11 @@ import {
   TrendingUp,
   Inbox
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/useAuth';
 import toast from 'react-hot-toast';
-
-// Tipagem básica para os dados que vêm do backend
-interface RelatorioItem {
-  id: string;
-  dataAbertura: string;
-  dataAlteracao: string;
-  setor: string;
-  assunto: string;
-  status: string;
-  problema: string;
-  tempoResolucao: string;
-}
+import api from '../services/api';
+import { relatorioListResponseSchema } from '../schemas/relatorio';
+import type { RelatorioItem } from '../types';
 
 export function Relatorios() {
   const [dataInicio, setDataInicio] = useState('');
@@ -40,14 +31,6 @@ export function Relatorios() {
 
     setCarregando(true);
     try {
-      const token = localStorage.getItem('@SankhyaTickets:token'); 
-
-      if (!token) {
-        toast.error('Sessão expirada. Por favor, faça login novamente.');
-        setCarregando(false);
-        return;
-      }
-
       const queryParams = new URLSearchParams();
       if (dataInicio) queryParams.append('dataInicio', dataInicio);
       if (dataFim) queryParams.append('dataFim', dataFim);
@@ -55,21 +38,18 @@ export function Relatorios() {
       
       queryParams.append('setorUsuarioLogado', user.setorId.toString());
 
-      const authHeader = token.startsWith('Bearer') ? token : `Bearer ${token}`;
+      const response = await api.get(`/api/sankhya/relatorios?${queryParams.toString()}`);
+      const parsed = relatorioListResponseSchema.safeParse(response.data);
 
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      const response = await fetch(`${baseUrl}api/sankhya/relatorios?${queryParams.toString()}`, {
-        headers: {
-          'Authorization': authHeader 
-        }
-      });
+      if (!parsed.success) {
+        toast.error('Resposta inválida ao gerar relatório.');
+        return;
+      }
 
-      const json = await response.json();
-
-      if (json.sucesso) {
-        setDados(json.dados);
+      if (parsed.data.sucesso && parsed.data.dados) {
+        setDados(parsed.data.dados);
       } else {
-        toast.error(json.mensagem || 'Erro ao gerar relatório. Tente novamente.');
+        toast.error(parsed.data.mensagem || 'Erro ao gerar relatório. Tente novamente.');
       }
     } catch (error) {
       console.error('Falha na requisição:', error);

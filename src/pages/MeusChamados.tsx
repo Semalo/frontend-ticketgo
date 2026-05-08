@@ -2,22 +2,10 @@ import { useState, useEffect } from 'react';
 import { Ticket, Clock, AlertCircle, Search, ArrowUpRight, ArrowDownLeft, CheckCircle2, Download, Inbox } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { useAuth } from '../contexts/AuthContext'; 
+import { useAuth } from '../contexts/useAuth'; 
 import * as XLSX from 'xlsx';
-
-interface Chamado {
-  idChamado: number;
-  contato: string;
-  dataAbertura: string;
-  prioridade: string;
-  problema: string;
-  nomeAssunto: string;
-  nomeStatus: string;
-  idStatus: string;
-  codUsuInc: string;
-  idSetorDestino: string;
-  setorOrigem: string; 
-}
+import { chamadosListResponseSchema } from '../schemas/chamado';
+import type { ChamadoResumo } from '../types';
 
 type FiltroTipo = 'TODOS' | 'RECEBIDOS' | 'ENVIADOS' | 'CONCLUÍDOS';
 
@@ -27,7 +15,7 @@ const formatarComoTitulo = (texto?: string) => {
 };
 
 export function MeusChamados() {
-  const [chamados, setChamados] = useState<Chamado[]>([]);
+  const [chamados, setChamados] = useState<ChamadoResumo[]>([]);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState('');
   const [filtroTipo, setFiltroTipo] = useState<FiltroTipo>('RECEBIDOS');
@@ -51,8 +39,15 @@ export function MeusChamados() {
           }
         });
         
-        if (response.data.sucesso) {
-          setChamados(response.data.dados);
+        const parsed = chamadosListResponseSchema.safeParse(response.data);
+
+        if (!parsed.success) {
+          console.error('Resposta inválida ao buscar chamados:', parsed.error);
+          return;
+        }
+
+        if (parsed.data.sucesso && parsed.data.dados) {
+          setChamados(parsed.data.dados);
         }
       } catch (error) {
         console.error('Erro ao buscar chamados:', error);

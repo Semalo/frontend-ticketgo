@@ -1,9 +1,15 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AxiosError } from 'axios';
 import api from '../services/api';
 import toast from 'react-hot-toast';
-import { useAuth } from '../contexts/AuthContext';
-import { Headset, User, Lock, LogIn, Loader2 } from 'lucide-react'; 
+import { useAuth } from '../contexts/useAuth';
+import { Headset, User, Lock, LogIn, Loader2 } from 'lucide-react';
+import { loginResponseSchema } from '../schemas/auth';
+
+interface LoginErrorResponse {
+  erro?: string;
+}
 
 export function Login() {
   const { carregarPerfilUsuario } = useAuth();
@@ -19,21 +25,26 @@ export function Login() {
     try {
       const response = await api.post('/api/sankhya/login', {
         usuario: username,
-        senha: password
+        senha: password,
       });
 
-      const token = response.data.token; 
+      const parsed = loginResponseSchema.safeParse(response.data);
 
-      if (token) {
-        localStorage.setItem('@SankhyaTickets:token', token);
-        localStorage.setItem('@SankhyaTickets:usuario', username.toUpperCase());
-        await carregarPerfilUsuario(username.toUpperCase());
-        toast.success('Login realizado com sucesso!');
-        navigate('/chamados');
+      if (!parsed.success) {
+        toast.error('Resposta inválida do servidor durante o login.');
+        return;
       }
 
-    } catch (error: any) {
-      const mensagemErro = error.response?.data?.erro || 'Erro ao conectar no servidor.';
+      const token = parsed.data.token;
+
+      localStorage.setItem('@SankhyaTickets:token', token);
+      localStorage.setItem('@SankhyaTickets:usuario', username.toUpperCase());
+      await carregarPerfilUsuario(username.toUpperCase());
+      toast.success('Login realizado com sucesso!');
+      navigate('/chamados');
+    } catch (error: unknown) {
+      const axiosError = error as AxiosError<LoginErrorResponse>;
+      const mensagemErro = axiosError.response?.data?.erro || 'Erro ao conectar no servidor.';
       toast.error(mensagemErro);
     } finally {
       setLoading(false);
@@ -42,15 +53,10 @@ export function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 relative overflow-hidden font-sans px-4 sm:px-6 lg:px-8">
-      
-      {/* Elementos Decorativos de Fundo (Blur/Glow) */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-400/20 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl pointer-events-none"></div>
 
-      {/* Cartão de Login */}
       <div className="w-full max-w-md bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl ring-1 ring-slate-900/5 p-8 sm:p-10 relative z-10 transition-all">
-        
-        {/* Cabeçalho do Cartão (Logo) */}
         <div className="flex flex-col items-center mb-10">
           <div className="bg-blue-600 p-3 rounded-2xl shadow-lg shadow-blue-900/20 mb-4">
             <Headset className="text-white" size={32} strokeWidth={2.5} />
@@ -58,18 +64,12 @@ export function Login() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">
             Ticket<span className="text-blue-600">Go</span>
           </h1>
-          <p className="text-sm text-slate-500 mt-2 text-center">
-            Insira as suas credenciais para aceder ao portal.
-          </p>
+          <p className="text-sm text-slate-500 mt-2 text-center">Insira as suas credenciais para aceder ao portal.</p>
         </div>
 
-        {/* Formulário */}
         <form onSubmit={handleLogin} className="space-y-6">
-          
           <div className="space-y-1.5">
-            <label className="block text-sm font-semibold text-slate-700">
-              Usuário
-            </label>
+            <label className="block text-sm font-semibold text-slate-700">Usuário</label>
             <div className="relative rounded-xl shadow-sm">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
                 <User className="h-5 w-5 text-slate-400" aria-hidden="true" />
@@ -87,9 +87,7 @@ export function Login() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-sm font-semibold text-slate-700">
-              Palavra-passe
-            </label>
+            <label className="block text-sm font-semibold text-slate-700">Palavra-passe</label>
             <div className="relative rounded-xl shadow-sm">
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5">
                 <Lock className="h-5 w-5 text-slate-400" aria-hidden="true" />
@@ -123,14 +121,10 @@ export function Login() {
               </>
             )}
           </button>
-
         </form>
-        
-        {/* Rodapé do Cartão */}
+
         <div className="mt-8 text-center">
-          <p className="text-xs text-slate-500">
-            Acesso restrito a colaboradores autorizados.
-          </p>
+          <p className="text-xs text-slate-500">Acesso restrito a colaboradores autorizados.</p>
         </div>
       </div>
     </div>

@@ -14,7 +14,8 @@ import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { SETORES_MAP, ASSUNTOS_MAP } from "../utils/dicionarios";
 import toast from "react-hot-toast";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/useAuth";
+import { chamadoMutationResponseSchema } from '../schemas/chamado';
 
 export function NovoChamado() {
   const navigate = useNavigate();
@@ -77,11 +78,18 @@ export function NovoChamado() {
     try {
       const response = await api.post("/api/sankhya/chamados", payloadSankhya);
 
-      if (response.data.sucesso) {
+      const parsed = chamadoMutationResponseSchema.safeParse(response.data);
+
+      if (!parsed.success) {
+        toast.error('Resposta inválida do servidor ao abrir chamado.');
+        return;
+      }
+
+      if (parsed.data.sucesso) {
         toast.success("Chamado aberto com sucesso!");
         navigate("/chamados");
       } else {
-        toast.error("Erro ao criar chamado: " + response.data.erro);
+        toast.error("Erro ao criar chamado: " + (parsed.data.erro || 'Falha desconhecida'));
       }
     } catch (error) {
       console.error("Erro ao salvar no Sankhya:", error);

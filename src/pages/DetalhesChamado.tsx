@@ -16,10 +16,12 @@ import {
   AlertCircle
 } from 'lucide-react';
 import api from '../services/api';
-import { useAuth } from '../contexts/AuthContext'; 
+import { useAuth } from '../contexts/useAuth'; 
 import toast from 'react-hot-toast';
 // Importação do dicionário de setores adicionada aqui
 import { SETORES_MAP } from '../utils/dicionarios'; 
+import { chamadoDetalheResponseSchema, chamadoMutationResponseSchema } from '../schemas/chamado';
+import type { AtualizacaoChamadoPayload, ChamadoDetalhe, ChamadoInteracao } from '../types';
 
 export function DetalhesChamado() {
   const { id } = useParams();
@@ -29,7 +31,7 @@ export function DetalhesChamado() {
   const codigoUsuario = user?.codigoUsuario;
   const setorUsuarioLogado = user?.setorId;
 
-  const [chamado, setChamado] = useState<any>(null);
+  const [chamado, setChamado] = useState<ChamadoDetalhe | null>(null);
   const [loading, setLoading] = useState(true);
   const [enviando, setEnviando] = useState(false);
 
@@ -43,6 +45,7 @@ export function DetalhesChamado() {
   const [arquivoSelecionado, setArquivoSelecionado] = useState<File | null>(null);
   const [descricaoAnexo, setDescricaoAnexo] = useState('');
   const [enviandoAnexo, setEnviandoAnexo] = useState(false);
+  const interacoes = chamado?.interacoes ?? [];
 
   const podeGerir = chamado && setorUsuarioLogado?.toString() === chamado.idSetorDestino?.toString();
 
@@ -59,13 +62,20 @@ export function DetalhesChamado() {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
 
-      if (response.data.sucesso) {
+      const parsed = chamadoMutationResponseSchema.safeParse(response.data);
+
+      if (!parsed.success) {
+        toast.error('Resposta inválida ao enviar anexo.');
+        return;
+      }
+
+      if (parsed.data.sucesso) {
         toast.success('Anexo enviado com sucesso!');
         setArquivoSelecionado(null);
         setDescricaoAnexo('');
         await buscarDetalhes(); 
       } else {
-        toast.error('Erro: ' + response.data.erro);
+        toast.error('Erro: ' + (parsed.data.erro || 'Falha desconhecida'));
       }
     } catch (error) {
       console.error('Erro ao enviar anexo:', error);
@@ -78,8 +88,15 @@ export function DetalhesChamado() {
   const buscarDetalhes = async () => {
     try {
       const response = await api.get(`/api/sankhya/chamados/${id}`);
-      if (response.data.sucesso) {
-        const dados = response.data.dados;
+      const parsed = chamadoDetalheResponseSchema.safeParse(response.data);
+
+      if (!parsed.success) {
+        console.error('Resposta inválida ao buscar detalhes do chamado:', parsed.error);
+        return;
+      }
+
+      if (parsed.data.sucesso && parsed.data.dados) {
+        const dados = parsed.data.dados;
         setChamado(dados);
         setStatus(dados.idStatus); 
         setPrioridade(dados.prioridade);
@@ -104,7 +121,7 @@ export function DetalhesChamado() {
 
     try {
       // Cria o payload base que sempre será enviado
-      const payload: any = {
+      const payload: AtualizacaoChamadoPayload = {
         codAnalista: codigoUsuario,
         idStatus: status,
         prioridade: prioridade,
@@ -118,11 +135,18 @@ export function DetalhesChamado() {
 
       const response = await api.put(`/api/sankhya/chamados/${id}`, payload);
 
-      if (response.data.sucesso) {
+      const parsed = chamadoMutationResponseSchema.safeParse(response.data);
+
+      if (!parsed.success) {
+        toast.error('Resposta inválida ao guardar alterações.');
+        return;
+      }
+
+      if (parsed.data.sucesso) {
         toast.success('Alterações guardadas com sucesso!');
         await buscarDetalhes(); 
       } else {
-        toast.error('Erro ao guardar: ' + response.data.erro);
+        toast.error('Erro ao guardar: ' + (parsed.data.erro || 'Falha desconhecida'));
       }
     } catch (error) {
       console.error('Erro ao salvar alterações:', error);
@@ -146,11 +170,18 @@ export function DetalhesChamado() {
 
       const response = await api.post(`/api/sankhya/chamados/${id}/interacao`, payload);
 
-      if (response.data.sucesso) {
+      const parsed = chamadoMutationResponseSchema.safeParse(response.data);
+
+      if (!parsed.success) {
+        toast.error('Resposta inválida ao enviar mensagem.');
+        return;
+      }
+
+      if (parsed.data.sucesso) {
         setNovaMensagem(''); 
         await buscarDetalhes(); 
       } else {
-        toast.error('Erro ao enviar mensagem: ' + response.data.erro);
+        toast.error('Erro ao enviar mensagem: ' + (parsed.data.erro || 'Falha desconhecida'));
       }
     } catch (error) {
       console.error('Erro ao enviar interação:', error);
@@ -248,7 +279,7 @@ export function DetalhesChamado() {
             
             <div className="p-6">
               <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 md:before:ml-6 before:-translate-x-px before:h-full before:w-0.5 before:bg-linear-to-b before:from-gray-100 before:via-gray-200 before:to-gray-100">
-                {chamado.interacoes?.length > 0 ? chamado.interacoes.map((interacao: any) => (
+                {interacoes.length > 0 ? interacoes.map((interacao: ChamadoInteracao) => (
                   <div key={interacao.id} className="relative flex items-start gap-4 md:gap-6">
                     <div className={`flex items-center justify-center w-10 h-10 md:w-12 md:h-12 rounded-full border-4 border-white shrink-0 z-10 shadow-sm
                       ${interacao.tipo === 'status' ? 'bg-gray-100 text-gray-500' : 'bg-blue-100 text-blue-600'}`}>
