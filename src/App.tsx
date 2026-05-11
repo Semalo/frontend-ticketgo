@@ -14,19 +14,23 @@ function App() {
       <AuthProvider>
       <Toaster 
         position="top-right" 
+        gutter={8}
+        containerStyle={{ top: 16, right: 16, zIndex: 99999 }}
         toastOptions={{
-          duration: 3000,
+          duration: 4000,
           style: {
             background: '#334155', 
             color: '#fff',        
             borderRadius: '10px',
             fontWeight: '500',
+            maxWidth: '420px',
           },
           success: {
             style: { background: '#10b981' }, 
           },
           error: {
-            style: { background: '#ef4444' }, 
+            style: { background: '#ef4444' },
+            duration: 4500,
           },
         }} 
       />

@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../contexts/AuthContext';
 import { Headset, User, Lock, LogIn, Loader2 } from 'lucide-react'; 
 
+const LOGIN_ERROR_TOAST_ID = 'login-error';
+
 export function Login() {
   const { carregarPerfilUsuario } = useAuth();
   const [username, setUsername] = useState('');
@@ -32,9 +34,31 @@ export function Login() {
         navigate('/chamados');
       }
 
-    } catch (error: any) {
-      const mensagemErro = error.response?.data?.erro || 'Erro ao conectar no servidor.';
-      toast.error(mensagemErro);
+    } catch (error: unknown) {
+      console.error('Falha no login', error);
+
+      let mensagemErro = 'Erro ao conectar no servidor.';
+
+      if (typeof error === 'object' && error !== null && 'response' in error) {
+        const apiError = error as {
+          response?: {
+            data?: {
+              erro?: string;
+              mensagem?: string;
+              message?: string;
+            };
+          };
+        };
+
+        mensagemErro =
+          apiError.response?.data?.erro ||
+          apiError.response?.data?.mensagem ||
+          apiError.response?.data?.message ||
+          mensagemErro;
+      }
+
+      toast.dismiss(LOGIN_ERROR_TOAST_ID);
+      toast.error(mensagemErro, { id: LOGIN_ERROR_TOAST_ID, duration: 4500 });
     } finally {
       setLoading(false);
     }

@@ -38,10 +38,12 @@ api.interceptors.response.use(
     // Se o backend retornou um erro, verificamos se existe uma resposta estruturada
     if (error.response) {
       const status = error.response.status;
+      const requestUrl = error.config?.url as string | undefined;
+      const isLoginRequest = requestUrl?.includes('/api/sankhya/login');
 
       // Se o código for 500 (Erro no Servidor) ou 400 (Requisição Inválida) ou 401 (Sessão Expirada/Não Autorizado)
-      if (status === 500 || status === 400 || status === 401 || status === 403 || status === 504) {
-        console.warn(`Erro ${status} detetado. A redirecionar para o login...`);
+      if ((status === 500 || status === 400 || status === 401 || status === 403 || status === 504) && !isLoginRequest) {
+        console.warn(`Erro ${status} detetado na rota ${requestUrl}. A redirecionar para o login...`);
         
         // 1. Limpamos o armazenamento local para remover o token inválido/antigo
         localStorage.removeItem('@SankhyaTickets:token');
@@ -50,6 +52,8 @@ api.interceptors.response.use(
         // 2. Forçamos o redirecionamento para a página raiz (Login)
         // Usamos window.location.href em vez de useNavigate porque estamos fora de um componente React
         window.location.href = '/'; 
+      } else if (isLoginRequest) {
+        console.warn(`Erro ${status} no login (${requestUrl}). Mantendo utilizador na página para exibir feedback.`);
       }
     }
 
