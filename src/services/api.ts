@@ -1,6 +1,8 @@
 // src/services/api.ts
 import axios from 'axios';
 
+const LOGIN_ENDPOINT_PATH = '/api/sankhya/login';
+
 // 1. Criamos a nossa base de conexão apontando para o servidor Node.js
 export const api = axios.create({
    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000', 
@@ -38,8 +40,8 @@ api.interceptors.response.use(
     // Se o backend retornou um erro, verificamos se existe uma resposta estruturada
     if (error.response) {
       const status = error.response.status;
-      const requestUrl = error.config?.url as string | undefined;
-      const isLoginRequest = requestUrl?.includes('/api/sankhya/login');
+      const requestUrl = error.config?.url;
+      const isLoginRequest = requestUrl?.includes(LOGIN_ENDPOINT_PATH);
 
       // Se o código for 500 (Erro no Servidor) ou 400 (Requisição Inválida) ou 401 (Sessão Expirada/Não Autorizado)
       if ((status === 500 || status === 400 || status === 401 || status === 403 || status === 504) && !isLoginRequest) {

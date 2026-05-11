@@ -58,7 +58,7 @@ export function Login() {
       }
 
       toast.dismiss(LOGIN_ERROR_TOAST_ID);
-      toast.error(mensagemErro, { id: LOGIN_ERROR_TOAST_ID, duration: 4500 });
+      toast.error(mensagemErro, { id: LOGIN_ERROR_TOAST_ID });
     } finally {
       setLoading(false);
     }
