@@ -15,7 +15,7 @@ function App() {
       <Toaster 
         position="top-right" 
         gutter={8}
-        containerStyle={{ top: 16, right: 16, zIndex: 99999 }}
+        containerStyle={{ top: 16, right: 16, zIndex: 9999 }}
         toastOptions={{
           duration: 4000,
           style: {

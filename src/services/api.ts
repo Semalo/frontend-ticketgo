@@ -41,11 +41,11 @@ api.interceptors.response.use(
     if (error.response) {
       const status = error.response.status;
       const requestUrl = error.config?.url;
-      const isLoginRequest = requestUrl?.includes(LOGIN_ENDPOINT_PATH);
+      const isLoginRequest = requestUrl?.endsWith(LOGIN_ENDPOINT_PATH);
 
       // Se o código for 500 (Erro no Servidor) ou 400 (Requisição Inválida) ou 401 (Sessão Expirada/Não Autorizado)
       if ((status === 500 || status === 400 || status === 401 || status === 403 || status === 504) && !isLoginRequest) {
-        console.warn(`Erro ${status} detetado na rota ${requestUrl}. A redirecionar para o login...`);
+        console.warn(`Erro ${status} detectado na rota ${requestUrl}. A redirecionar para o login...`);
         
         // 1. Limpamos o armazenamento local para remover o token inválido/antigo
         localStorage.removeItem('@SankhyaTickets:token');
