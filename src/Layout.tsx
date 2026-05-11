@@ -13,6 +13,7 @@ import {
 
 import api from './services/api';
 import { useAuth } from './contexts/AuthContext';
+import { useSocketNotifications } from './hooks/useSocketNotifications';
 
 export function Layout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -22,6 +23,7 @@ export function Layout() {
   const navigate = useNavigate();
 
   const { user, limparUsuario } = useAuth();
+  useSocketNotifications(user);
 
   const menuItems = [
     { title: 'Meus Chamados', icon: <Ticket size={20} />, path: '/chamados' },
