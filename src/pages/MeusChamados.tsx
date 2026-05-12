@@ -1,9 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { Ticket, Clock, AlertCircle, Search, ArrowUpRight, ArrowDownLeft, CheckCircle2, Download, Inbox } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext'; 
-import { socket } from '../services/socket';
 import * as XLSX from 'xlsx';
 
 interface Chamado {
@@ -39,54 +38,31 @@ export function MeusChamados() {
   const { user } = useAuth(); 
   const codigoUsuario = user?.codigoUsuario;
 
-  const buscarChamados = useCallback(async () => {
-    if (!user?.setorId || !codigoUsuario) return; 
+  useEffect(() => {
+    const buscarChamados = async () => {
+      if (!user?.setorId || !codigoUsuario) return; 
 
-    try {
-      setLoading(true);
-      const response = await api.get('/api/sankhya/chamados', {
-        params: {
-          setorDestino: user.setorId,
-          codUsuInc: codigoUsuario 
+      try {
+        setLoading(true);
+        const response = await api.get('/api/sankhya/chamados', {
+          params: {
+            setorDestino: user.setorId,
+            codUsuInc: codigoUsuario 
+          }
+        });
+        
+        if (response.data.sucesso) {
+          setChamados(response.data.dados);
         }
-      });
-      
-      if (response.data.sucesso) {
-        setChamados(response.data.dados);
+      } catch (error) {
+        console.error('Erro ao buscar chamados:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('Erro ao buscar chamados:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [user, codigoUsuario]);
+    };
 
-  useEffect(() => {
     buscarChamados();
-  }, [buscarChamados]);
-
-  // Atualiza a lista em tempo real quando chegam eventos via Socket.IO (com debounce de 300ms)
-  useEffect(() => {
-    if (!user) return;
-
-    let debounceTimer: ReturnType<typeof setTimeout>;
-
-    const handleRefresh = () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => buscarChamados(), 300);
-    };
-
-    socket.on('chamado:novo', handleRefresh);
-    socket.on('chamado:respondido', handleRefresh);
-    socket.on('chamado:status_alterado', handleRefresh);
-
-    return () => {
-      clearTimeout(debounceTimer);
-      socket.off('chamado:novo', handleRefresh);
-      socket.off('chamado:respondido', handleRefresh);
-      socket.off('chamado:status_alterado', handleRefresh);
-    };
-  }, [user, buscarChamados]);
+  }, [user, codigoUsuario]);
 
   useEffect(() => {
     setPaginaAtual(1);

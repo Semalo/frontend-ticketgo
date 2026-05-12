@@ -2,7 +2,6 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import type { ReactNode } from 'react';
 import api from '../services/api';
-import { socket } from '../services/socket';
 
 // 1. Definimos o "formato" dos dados do usuário (TypeScript)
 export interface User {
@@ -40,7 +39,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const limparUsuario = () => {
-    socket.disconnect();
     setUser(null);
     localStorage.removeItem('@SankhyaTickets:token');
     localStorage.removeItem('@SankhyaTickets:usuario');
@@ -65,19 +63,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Se a API da Sankhya cair, você pode optar por forçar o logout chamando limparUsuario() aqui
     }
   };
-
-  // Conecta o socket quando o utilizador está autenticado e desconecta quando sai ou quando o efeito é limpo
-  useEffect(() => {
-    if (!user) return;
-
-    socket.auth = { token: localStorage.getItem('@SankhyaTickets:token') };
-    (socket.io.opts as Record<string, unknown>).query = { setorId: user.setorId };
-    socket.connect();
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [user]);
 
   useEffect(() => {
     const savedUsername = localStorage.getItem('@SankhyaTickets:usuario');
